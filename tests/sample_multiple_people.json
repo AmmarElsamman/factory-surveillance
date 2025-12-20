@@ -1,0 +1,42 @@
+{
+  "camera_id": "CAM_001",
+  "timestamp": "2024-11-03T15:00:00.000Z",
+  "detections": [
+    {
+      "local_track_id": "CAM_001_T001",
+      "bounding_box": {
+        "x": 200,
+        "y": 150,
+        "width": 70,
+        "height": 180
+      },
+      "person_confidence": 0.95,
+      "helmet_detected": true,
+      "helmet_confidence": 0.91
+    },
+    {
+      "local_track_id": "CAM_001_T002",
+      "bounding_box": {
+        "x": 600,
+        "y": 160,
+        "width": 75,
+        "height": 190
+      },
+      "person_confidence": 0.93,
+      "helmet_detected": true,
+      "helmet_confidence": 0.89
+    },
+    {
+      "local_track_id": "CAM_001_T003",
+      "bounding_box": {
+        "x": 1100,
+        "y": 140,
+        "width": 80,
+        "height": 200
+      },
+      "person_confidence": 0.97,
+      "helmet_detected": false,
+      "helmet_confidence": 0.92
+    }
+  ]
+}

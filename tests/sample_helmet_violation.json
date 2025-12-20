@@ -1,0 +1,18 @@
+{
+  "camera_id": "CAM_004",
+  "timestamp": "2024-11-03T14:30:15.456Z",
+  "detections": [
+    {
+      "local_track_id": "CAM_004_T018",
+      "bounding_box": {
+        "x": 890,
+        "y": 210,
+        "width": 82,
+        "height": 205
+      },
+      "person_confidence": 0.94,
+      "helmet_detected": false,
+      "helmet_confidence": 0.88
+    }
+  ]
+}
