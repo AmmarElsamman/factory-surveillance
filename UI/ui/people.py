@@ -300,7 +300,7 @@ class PeopleWidget(QWidget):
         
         # Worker information
         info_text = f"""
-        <b>{worker.full_name}</b>
+        <b>{worker.full_name}
         ID: {worker.employee_code}
         Department: {worker.department or 'N/A'}
         Role: {worker.role or 'N/A'}

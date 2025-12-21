@@ -36,7 +36,7 @@ class AIWorker(QThread):
             if not ret:
                 continue
 
-            # Process through your AdvancedAttendanceSystem logic
+            # Process through your AttendanceSystem logic
             processed_frame, results = self.ai_system.process_frame(frame)
 
             # Convert BGR to RGB for Qt

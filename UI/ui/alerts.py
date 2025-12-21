@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                QLabel, QComboBox, QCheckBox, QFrame, QListWidget,
                                QListWidgetItem, QScrollArea, QMessageBox, QInputDialog,
                                QMenu)
-from PySide6.QtGui import QAction  # QAction is now in QtGui
+from PySide6.QtGui import QAction  
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont, QColor
 from ui.utils.components import Card, EventItem

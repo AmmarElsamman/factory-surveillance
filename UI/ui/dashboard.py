@@ -4,14 +4,22 @@ Dashboard view - Command Center
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QScrollArea
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from UI.repositories.alert_repository import AlertRepository
+from UI.repositories.camera_repository import CameraRepository
 from ui.utils.components import StatCard, ChartPlaceholder, EventItem
 from ui.utils.styles import COLORS
+
 
 
 class DashboardWidget(QWidget):
     """Main dashboard view"""
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.cameras = []
+        self.alerts = []
+        self.active_cameras = []
+        
+        self.load_data()
         
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -34,41 +42,41 @@ class DashboardWidget(QWidget):
         stats_layout = QGridLayout()
         stats_layout.setSpacing(12)
         
-        stats_layout.addWidget(StatCard("Active Alerts", "12", "danger"), 0, 0)
-        stats_layout.addWidget(StatCard("PPE Compliance", "94%", "success"), 0, 1)
-        stats_layout.addWidget(StatCard("Cameras Online", "28/30", "warning"), 0, 2)
-        stats_layout.addWidget(StatCard("Entry Success", "1,234", "success"), 0, 3)
+        stats_layout.addWidget(StatCard("Active Alerts", str(len(self.alerts)), "danger"), 0, 0)
+        # stats_layout.addWidget(StatCard("PPE Compliance", "94%", "success"), 0, 1)
+        stats_layout.addWidget(StatCard("Cameras Online", f"{len(self.active_cameras)}/{len(self.cameras)}", "warning"), 0, 2)
+        # stats_layout.addWidget(StatCard("Detected Faces", f"1,234", "success"), 0, 3)
         
         layout.addLayout(stats_layout)
         
-        # Charts row
-        charts_layout = QGridLayout()
-        charts_layout.setSpacing(12)
+        # # Charts row
+        # charts_layout = QGridLayout()
+        # charts_layout.setSpacing(12)
         
-        charts_layout.addWidget(ChartPlaceholder("Entry Success vs Denied"), 0, 0)
-        charts_layout.addWidget(ChartPlaceholder("Camera Health"), 0, 1)
-        charts_layout.addWidget(ChartPlaceholder("Top Incident Zones"), 1, 0)
-        charts_layout.addWidget(ChartPlaceholder("Compliance Trend"), 1, 1)
+        # # charts_layout.addWidget(ChartPlaceholder("Entry Success vs Denied"), 0, 0)
+        # # charts_layout.addWidget(ChartPlaceholder("Camera Health"), 0, 1)
+        # # charts_layout.addWidget(ChartPlaceholder("Top Incident Zones"), 1, 0)
+        # # charts_layout.addWidget(ChartPlaceholder("Compliance Trend"), 1, 1)
         
-        layout.addLayout(charts_layout)
+        # layout.addLayout(charts_layout)
         
-        # Critical Events Section
-        events_header = QLabel("Last 10 Critical Events")
-        events_header_font = QFont()
-        events_header_font.setPointSize(12)
-        events_header_font.setBold(True)
-        events_header.setFont(events_header_font)
-        layout.addWidget(events_header)
+        # # Critical Events Section
+        # events_header = QLabel("Last 10 Critical Events")
+        # events_header_font = QFont()
+        # events_header_font.setPointSize(12)
+        # events_header_font.setBold(True)
+        # events_header.setFont(events_header_font)
+        # layout.addWidget(events_header)
         
-        # Events list
-        for i in range(5):
-            event = EventItem({
-                'title': f'Security Event #{i+1}',
-                'details': f'Camera {i+1} - Zone B - No PPE Detected',
-                'timestamp': f'2024-01-{15+i} 14:{30+i}:00',
-                'severity': ['critical', 'warning', 'info'][i % 3]
-            })
-            layout.addWidget(event)
+        # # Events list
+        # for i in range(5):
+        #     event = EventItem({
+        #         'title': f'Security Event #{i+1}',
+        #         'details': f'Camera {i+1} - Zone B - No PPE Detected',
+        #         'timestamp': f'2024-01-{15+i} 14:{30+i}:00',
+        #         'severity': ['critical', 'warning', 'info'][i % 3]
+        #     })
+        #     layout.addWidget(event)
         
         # Quick Actions
         actions_header = QLabel("Quick Actions")
@@ -106,3 +114,9 @@ class DashboardWidget(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(scroll)
+    def load_data(self):
+        """Load dashboard data from repositories (placeholder)"""
+        self.cameras = CameraRepository.get_all_cameras()
+        self.active_cameras = CameraRepository.get_cameras_by_status('online')
+        self.alerts = AlertRepository.get_recent_alerts()
+        

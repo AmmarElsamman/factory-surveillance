@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
         self.dashboard = DashboardWidget()
         self.live_monitor = LiveMonitorWidget()
         self.ai_attendance = AIWidget(self.ai_engine) 
-        self.helmet_vest = HelmetVestWidget()        # New Helmet Tab
+        self.helmet_vest = HelmetVestWidget()  
         self.playback = PlaybackWidget()
         self.alerts = AlertsWidget()
         self.people = PeopleWidget()
