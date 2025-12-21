@@ -1,136 +1,131 @@
 """
-Styles and themes for the application
+Styles and themes for the application based on the Horizon Homes UI
 """
 from PySide6.QtGui import QColor
 
-
-# Color Palette
+# Color Palette extracted accurately from the image
 COLORS = {
-    'primary': '#1e3a5f',      # Deep blue
-    'secondary': '#2a5a8f',     # Medium blue
-    'accent': '#ff6b6b',        # Red (alerts)
-    'success': '#51cf66',       # Green
-    'warning': '#ffd93d',       # Yellow
-    'danger': '#ff6b6b',        # Red
-    'dark': '#0a0e27',          # Dark background
-    'light': '#f0f2f5',         # Light background
-    'text': '#ffffff',          # White text
-    'text_secondary': '#b0bec5', # Secondary text
-    'card_bg': '#1a2a47',       # Card background
-    'border': '#2a4a6f',        # Border color
+    'primary': "#4A4A4A",        # Vibrant Orange (Buttons/Highlights)
+    'secondary': "#4A4A4A",      # Muted Grey (Search/Inactive)
+    'accent': '#FACC15',         # Accent matches primary orange
+    'success': '#4ADE80',        # Bright Green (Trend up)
+    'warning': '#FACC15',        # Yellow
+    'danger': '#F87171',         # Red (Trend down)
+    'dark': "#1E1E1E",           # Deep dark background
+    'light': '#FFFFFF',          # Pure White
+    'text': '#FFFFFF',           # Main White text
+    'text_secondary': '#A3A3A3', # Muted grey text
+    'card_bg': "rgba(255, 255, 255, 0.05)", # Transparent Glass effect
+    'border': "rgba(255, 255, 255, 0.1)",   # Subtle glass edge
 }
 
-
 def apply_main_stylesheet(widget):
-    """Apply main stylesheet to the application"""
+    """Apply Glassmorphism Horizon Homes stylesheet"""
+    
     stylesheet = f"""
+    /* General Text Styling */
     * {{
         color: {COLORS['text']};
+        font-family: 'Segoe UI', 'Roboto', sans-serif;
+        outline: none;
     }}
     
-    QMainWindow {{
-        background-color: {COLORS['dark']};
-    }}
-    
-    QWidget {{
+    /* Main Background - Using a slight gradient for depth */
+    QMainWindow, QWidget {{
         background-color: {COLORS['dark']};
         color: {COLORS['text']};
     }}
+
+    /* Sidebar and Navigation (assuming it's a QFrame or similar) */
+    QFrame#navigation {{
+        background-color: rgba(0, 0, 0, 0.2);
+        border-right: 1px solid {COLORS['border']};
+    }}
     
+    /* ScrollBar Styling - Slim and modern */
     QScrollBar:vertical {{
-        background-color: {COLORS['dark']};
-        width: 12px;
-        border: none;
+        background-color: transparent;
+        width: 8px;
+        margin: 0px;
     }}
     
     QScrollBar::handle:vertical {{
-        background-color: {COLORS['secondary']};
-        border-radius: 6px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
         min-height: 20px;
     }}
     
     QScrollBar::handle:vertical:hover {{
-        background-color: {COLORS['accent']};
+        background-color: rgba(255, 255, 255, 0.2);
     }}
     
-    QScrollBar:horizontal {{
-        background-color: {COLORS['dark']};
-        height: 12px;
-        border: none;
-    }}
-    
-    QScrollBar::handle:horizontal {{
-        background-color: {COLORS['secondary']};
-        border-radius: 6px;
-        min-width: 20px;
-    }}
-    
+    /* Buttons - Glass and Orange styles */
     QPushButton {{
         background-color: {COLORS['secondary']};
         color: {COLORS['text']};
-        border: none;
-        border-radius: 4px;
+        border: 1px solid {COLORS['border']};
+        border-radius: 10px;
         padding: 8px 16px;
-        font-weight: bold;
+        font-weight: 600;
+    }}
+    
+    /* Target the Orange buttons specifically */
+    QPushButton#primary, QPushButton#success_action {{
+        background-color: {COLORS['primary']};
+        border: none;
     }}
     
     QPushButton:hover {{
-        background-color: {COLORS['accent']};
+        background-color: rgba(255, 255, 255, 0.15);
     }}
     
-    QPushButton:pressed {{
-        background-color: {COLORS['primary']};
+    QPushButton#primary:hover {{
+        background-color: #FF8562;
     }}
     
-    QPushButton#danger {{
-        background-color: {COLORS['danger']};
-    }}
-    
-    QPushButton#success {{
-        background-color: {COLORS['success']};
-    }}
-    
+    /* Search Bars / Inputs */
     QLineEdit, QTextEdit, QSpinBox, QComboBox {{
-        background-color: {COLORS['card_bg']};
+        background-color: rgba(255, 255, 255, 0.07);
         color: {COLORS['text']};
         border: 1px solid {COLORS['border']};
-        border-radius: 4px;
-        padding: 6px;
+        border-radius: 12px;
+        padding: 10px;
     }}
     
-    QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus {{
-        border: 2px solid {COLORS['accent']};
+    QLineEdit:focus {{
+        border: 1px solid {COLORS['primary']};
+        background-color: rgba(255, 255, 255, 0.1);
     }}
     
+    /* The Glass Card Effect */
+    QFrame#card, QFrame[objectName^="card"] {{
+        background-color: {COLORS['card_bg']};
+        border-radius: 18px;
+        border: 1px solid {COLORS['border']};
+    }}
+    
+    /* Labels */
     QLabel {{
-        color: {COLORS['text']};
+        background: transparent;
     }}
     
-    QCheckBox, QRadioButton {{
-        color: {COLORS['text']};
-        spacing: 5px;
+    QLabel#value {{
+        font-size: 24px;
+        font-weight: bold;
     }}
-    
-    QCheckBox::indicator, QRadioButton::indicator {{
-        width: 16px;
-        height: 16px;
-        border-radius: 3px;
+
+    /* Checkbox indicators */
+    QCheckBox::indicator {{
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
         border: 1px solid {COLORS['border']};
-        background-color: {COLORS['card_bg']};
+        background-color: rgba(255, 255, 255, 0.05);
     }}
     
-    QCheckBox::indicator:checked, QRadioButton::indicator:checked {{
-        background-color: {COLORS['accent']};
-        border: 1px solid {COLORS['accent']};
-    }}
-    
-    QComboBox::drop-down {{
-        border: none;
-    }}
-    
-    QComboBox::down-arrow {{
-        image: none;
-        width: 0px;
+    QCheckBox::indicator:checked {{
+        background-color: {COLORS['primary']};
+        border: 1px solid {COLORS['primary']};
     }}
     """
     

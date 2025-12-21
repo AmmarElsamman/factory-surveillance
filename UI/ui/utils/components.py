@@ -8,17 +8,26 @@ from PySide6.QtGui import QFont, QColor, QLinearGradient, QPainter, QPixmap
 from ui.utils.styles import COLORS
 
 
+# Helper to convert Hex to RGBA for transparency
+def get_rgba(hex_color, alpha=0.2):
+    c = QColor(hex_color)
+    return f"rgba({c.red()}, {c.green()}, {c.blue()}, {alpha})"
+
 class Card(QFrame):
-    """Reusable card widget"""
+    """Reusable Glossy Transparent Card"""
     def __init__(self, title="", parent=None):
         super().__init__(parent)
+        
+        # GLASS STYLE: Semi-transparent background + Bright subtle border
+        # We use a 1px border with high transparency to simulate the 'edge' of glass
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: {COLORS['card_bg']};
-                border-radius: 8px;
-                border: 1px solid {COLORS['border']};
+                background-color: {get_rgba(COLORS['card_bg'], 0.4)}; 
+                border-radius: 15px;
+                border: 1px solid {get_rgba("#FFFFFF", 0.1)};
             }}
         """)
+        
         self.setFrameShape(QFrame.StyledPanel)
         
         layout = QVBoxLayout(self)
@@ -26,31 +35,181 @@ class Card(QFrame):
         layout.setSpacing(12)
         
         if title:
-            title_label = QLabel(title)
-            title_font = QFont()
-            title_font.setPointSize(12)
+            self.title_label = QLabel(title)
+            title_font = QFont("Segoe UI", 11)
             title_font.setBold(True)
-            title_label.setFont(title_font)
-            layout.addWidget(title_label)
+            self.title_label.setFont(title_font)
+            # Make title stand out on dark glass
+            self.title_label.setStyleSheet("background: transparent; color: white;")
+            layout.addWidget(self.title_label)
         
         self.content_layout = QVBoxLayout()
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         layout.addLayout(self.content_layout)
-    
+
     def add_content(self, widget):
-        """Add widget to card content"""
         self.content_layout.addWidget(widget)
-    
-    def set_content_layout(self, layout):
-        """Set custom layout for card content"""
-        # Clear existing content layout
-        while self.content_layout.count():
-            item = self.content_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+
+class StatCard(Card):
+    """Glossy Statistics card with smart handling for trends or status colors"""
+    def __init__(self, label="", value="0", trend=None, parent=None):
+        super().__init__(parent=parent)
         
-        # Add the new layout
-        self.layout().addLayout(layout)
+        # Main Layout
+        v_layout = QVBoxLayout()
+        h_layout = QHBoxLayout()
+        
+        # 1. Label (Top - Muted Text)
+        label_widget = QLabel(label)
+        label_widget.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent; font-size: 10pt;")
+        v_layout.addWidget(label_widget)
+        
+        # 2. Value (Main - Large White Text)
+        value_label = QLabel(str(value))
+        value_font = QFont("Segoe UI", 20)
+        value_font.setBold(True)
+        value_label.setFont(value_font)
+        value_label.setStyleSheet("color: white; background: transparent;")
+        h_layout.addWidget(value_label)
+        
+        # 3. Trend/Status Badge (The "Pill" indicator)
+        if trend:
+            # Check if trend is a status name or a number string
+            status_colors = {
+                "danger": COLORS['danger'],
+                "success": COLORS['success'],
+                "warning": COLORS['warning'],
+                "normal": COLORS['text_secondary']
+            }
+            
+            display_text = ""
+            pill_color = ""
+
+            if trend in status_colors:
+                # Use as status color (no percentage icon)
+                pill_color = status_colors[trend]
+                display_text = trend.upper()
+            else:
+                # Try to use as a numeric trend (e.g., "11.01")
+                try:
+                    trend_val = float(trend)
+                    pill_color = COLORS['success'] if trend_val > 0 else COLORS['danger']
+                    icon = "↗" if trend_val > 0 else "↘"
+                    display_text = f"{'+' if trend_val > 0 else ''}{trend}% {icon}"
+                except ValueError:
+                    # Fallback if it's some other string
+                    pill_color = COLORS['primary']
+                    display_text = str(trend)
+
+            bg_color = get_rgba(pill_color, 0.2)
+            
+            trend_label = QLabel(display_text)
+            trend_label.setStyleSheet(f"""
+                background-color: {bg_color};
+                color: {pill_color};
+                border-radius: 10px;
+                padding: 2px 8px;
+                font-size: 8pt;
+                font-weight: bold;
+                border: 1px solid {get_rgba(pill_color, 0.3)};
+            """)
+            h_layout.addWidget(trend_label)
+        
+        h_layout.addStretch()
+        v_layout.addLayout(h_layout)
+        self.content_layout.addLayout(v_layout)
+
+class GlossyButton(QPushButton):
+    """Button that matches the 'Add Property' orange style"""
+    def __init__(self, text, is_primary=False, parent=None):
+        super().__init__(text, parent)
+        color = COLORS['primary'] if is_primary else COLORS['secondary']
+        
+        self.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+                color: white;
+                border-radius: 10px;
+                padding: 8px 16px;
+                font-weight: bold;
+                border: 1px solid {get_rgba("#FFFFFF", 0.1)};
+            }}
+            QPushButton:hover {{
+                background-color: {get_rgba(color, 0.8)};
+            }}
+        """)
+
+
+class EventItem(QFrame):
+    """Glossy Transparent list items (Handles dictionary data from Security Events)"""
+    def __init__(self, event_data=None, title=None, subtext=None, price=None, parent=None):
+        super().__init__(parent)
+        
+        # If event_data (dict) is passed, extract values from it
+        if isinstance(event_data, dict):
+            self.title_text = event_data.get('title', 'Unknown Event')
+            self.sub_text = event_data.get('details', event_data.get('timestamp', ''))
+            self.side_text = event_data.get('camera', '') # Use camera name as the "price/value"
+            self.severity = event_data.get('severity', 'info')
+        else:
+            self.title_text = title or "Event"
+            self.sub_text = subtext or ""
+            self.side_text = price or ""
+            self.severity = "info"
+
+        self.setFixedHeight(70)
+        
+        # Determine a left border color based on severity
+        sev_color = COLORS.get('success')
+        if self.severity == 'critical': sev_color = COLORS.get('danger')
+        elif self.severity == 'warning': sev_color = COLORS.get('warning')
+
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: {get_rgba("#FFFFFF", 0.05)};
+                border-radius: 12px;
+                border-left: 4px solid {sev_color};
+            }}
+            QFrame:hover {{
+                background-color: {get_rgba("#FFFFFF", 0.1)};
+            }}
+        """)
+        
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(15, 5, 15, 5)
+        
+        # Icon / Avatar (Glossy circle)
+        icon = QLabel("🛡️") 
+        icon.setFixedSize(40, 40)
+        icon.setAlignment(Qt.AlignCenter)
+        icon.setStyleSheet(f"""
+            background: {get_rgba('#000', 0.3)}; 
+            border-radius: 20px; 
+            font-size: 16px;
+            border: 1px solid {get_rgba('#FFFFFF', 0.1)};
+        """)
+        layout.addWidget(icon)
+        
+        # Text Column
+        text_layout = QVBoxLayout()
+        text_layout.setSpacing(2)
+        
+        t_label = QLabel(self.title_text)
+        t_label.setStyleSheet("color: white; font-weight: bold; background: transparent; font-size: 10pt;")
+        
+        s_label = QLabel(self.sub_text)
+        s_label.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent; font-size: 8pt;")
+        
+        text_layout.addWidget(t_label)
+        text_layout.addWidget(s_label)
+        layout.addLayout(text_layout)
+        
+        layout.addStretch()
+        
+        # Side value (Camera info or Price)
+        p_label = QLabel(self.side_text)
+        p_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-weight: bold; background: transparent; font-size: 9pt;")
+        layout.addWidget(p_label)
 
 
 class ExpandableCard(Card):
@@ -109,36 +268,6 @@ class ExpandableCard(Card):
         """Add widget to card content"""
         self.content_layout.addWidget(widget)
 
-
-class StatCard(Card):
-    """Statistics card with value and label"""
-    def __init__(self, label="", value="0", status="normal", parent=None):
-        super().__init__(parent=parent)
-        
-        value_label = QLabel(str(value))
-        value_font = QFont()
-        value_font.setPointSize(24)
-        value_font.setBold(True)
-        value_label.setFont(value_font)
-        value_label.setAlignment(Qt.AlignCenter)
-        
-        label_widget = QLabel(label)
-        label_font = QFont()
-        label_font.setPointSize(10)
-        label_widget.setFont(label_font)
-        label_widget.setAlignment(Qt.AlignCenter)
-        label_widget.setStyleSheet(f"color: {COLORS['text_secondary']};")
-        
-        # Set color based on status
-        if status == "danger":
-            value_label.setStyleSheet(f"color: {COLORS['danger']};")
-        elif status == "success":
-            value_label.setStyleSheet(f"color: {COLORS['success']};")
-        elif status == "warning":
-            value_label.setStyleSheet(f"color: {COLORS['warning']};")
-        
-        self.content_layout.addWidget(value_label)
-        self.content_layout.addWidget(label_widget)
 
 
 class TrendStatCard(Card):
@@ -204,139 +333,6 @@ class ChartPlaceholder(Card):
         
         self.content_layout.addWidget(placeholder)
 
-
-class EventItem(QFrame):
-    """Event/Alert list item with enhanced features"""
-    clicked = Signal(dict)
-    context_menu_requested = Signal(object, dict)  # Signal for context menu
-    
-    def __init__(self, event_data=None, parent=None):
-        super().__init__(parent)
-        self.event_data = event_data or {}
-        self.alert_id = self.event_data.get('alert_id')
-        self.setCursor(Qt.PointingHandCursor)
-        
-        self.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLORS['card_bg']};
-                border-left: 4px solid {self._get_status_color()};
-                border-radius: 4px;
-                padding: 12px;
-                margin: 4px 0px;
-            }}
-            QFrame:hover {{
-                background-color: {COLORS['secondary']};
-            }}
-        """)
-        
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(4)
-        
-        # Header with severity icon and title
-        header_layout = QHBoxLayout()
-        
-        # Severity icon
-        severity = self.event_data.get('severity', 'info')
-        severity_icon = QLabel(self._get_severity_emoji(severity))
-        severity_icon.setStyleSheet("font-size: 14px;")
-        header_layout.addWidget(severity_icon)
-        
-        # Title
-        title = QLabel(self.event_data.get('title', 'Event'))
-        title_font = QFont()
-        title_font.setBold(True)
-        title.setFont(title_font)
-        header_layout.addWidget(title)
-        
-        header_layout.addStretch()
-        
-        # Status badge (for alerts)
-        if 'status' in self.event_data:
-            status_badge = QLabel(f" • {self.event_data['status'].title()}")
-            status_badge.setStyleSheet(f"""
-                color: {self._get_status_color(self.event_data['status'])};
-                font-size: 9pt;
-                font-weight: bold;
-            """)
-            header_layout.addWidget(status_badge)
-        
-        layout.addLayout(header_layout)
-        
-        # Details
-        details = QLabel(self.event_data.get('details', ''))
-        details.setStyleSheet(f"color: {COLORS['text_secondary']};")
-        details_font = QFont()
-        details_font.setPointSize(9)
-        details.setFont(details_font)
-        details.setWordWrap(True)
-        layout.addWidget(details)
-        
-        # Footer with timestamp and camera info
-        footer_layout = QHBoxLayout()
-        
-        # Timestamp
-        timestamp = QLabel(self.event_data.get('timestamp', ''))
-        timestamp.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: 8pt;")
-        footer_layout.addWidget(timestamp)
-        
-        footer_layout.addStretch()
-        
-        # Camera info (if available)
-        if 'camera' in self.event_data:
-            camera_label = QLabel(f"📹 {self.event_data['camera']}")
-            camera_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: 8pt;")
-            footer_layout.addWidget(camera_label)
-        
-        layout.addLayout(footer_layout)
-        
-        # Enable context menu
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(self.on_context_menu)
-    
-    def _get_status_color(self, status=None):
-        """Get color based on status or severity"""
-        if status:
-            # For alert status
-            status_map = {
-                'new': COLORS['danger'],
-                'acknowledged': COLORS['warning'],
-                'in_progress': COLORS['primary'],
-                'resolved': COLORS['success'],
-                'dismissed': COLORS['text_secondary']
-            }
-            return status_map.get(status.lower(), COLORS['accent'])
-        else:
-            # For severity
-            severity = self.event_data.get('severity', 'info')
-            if severity == 'critical':
-                return COLORS['danger']
-            elif severity == 'warning':
-                return COLORS['warning']
-            elif severity == 'success':
-                return COLORS['success']
-            return COLORS['accent']
-    
-    def _get_severity_emoji(self, severity):
-        """Get emoji for severity level"""
-        severity_map = {
-            'critical': '🔴',
-            'high': '🟠',
-            'medium': '🟡',
-            'low': '🔵',
-            'info': 'ℹ️'
-        }
-        return severity_map.get(severity.lower(), '⚪')
-    
-    def mousePressEvent(self, event):
-        """Handle mouse press events"""
-        if event.button() == Qt.LeftButton:
-            self.clicked.emit(self.event_data)
-        super().mousePressEvent(event)
-    
-    def on_context_menu(self, pos):
-        """Handle context menu request"""
-        self.context_menu_requested.emit(pos, self.event_data)
 
 
 class StatusBadge(QLabel):
