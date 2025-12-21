@@ -14,7 +14,7 @@ class AIWorker(QThread):
         self.ai_system = ai_system
         self.running = False
         self.is_paused = False
-        self.camera_index = 0  # Default to 0
+        self.camera_index = 0  
 
     def set_camera(self, index):
         """Update the camera index before starting the thread"""
@@ -22,7 +22,6 @@ class AIWorker(QThread):
 
     def run(self):
         self.running = True
-        # Open camera based on the index selected in the UI
         self.cap = cv2.VideoCapture(self.camera_index)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
@@ -36,7 +35,7 @@ class AIWorker(QThread):
             if not ret:
                 continue
 
-            # Process through your AttendanceSystem logic
+            # Process through your AdvancedAttendanceSystem logic
             processed_frame, results = self.ai_system.process_frame(frame)
 
             # Convert BGR to RGB for Qt
@@ -68,7 +67,6 @@ class AIWidget(QWidget):
         
         header_layout.addStretch()
         
-        # Camera Dropdown Menu
         self.cam_label = QLabel("Camera Source:")
         self.cam_label.setStyleSheet("color: white; font-weight: bold;")
         self.cam_select = QComboBox()
@@ -82,6 +80,11 @@ class AIWidget(QWidget):
                 padding: 5px;
                 border-radius: 3px;
             }
+            QComboBox:disabled {
+                background-color: #1a1a1a;
+                color: #555;
+                border: 1px solid #222;
+            }
         """)
         
         header_layout.addWidget(self.cam_label)
@@ -91,14 +94,8 @@ class AIWidget(QWidget):
         # 2. Video Display Area
         self.video_container = QLabel("Stream Stopped")
         self.video_container.setMinimumSize(800, 600)
-        self.video_container.setStyleSheet("""
-            background-color: #000000; 
-            border: 2px solid #333; 
-            border-radius: 10px;
-            color: #555;
-            font-size: 18px;
-        """)
         self.video_container.setAlignment(Qt.AlignCenter)
+        self.set_video_container_style(active=False)
         self.layout.addWidget(self.video_container, 1)
 
         # 3. Control Buttons Layout
@@ -108,10 +105,8 @@ class AIWidget(QWidget):
         self.btn_pause = QPushButton("⏸ Pause")
         self.btn_stop = QPushButton("⏹ Stop")
         
-        button_style = "padding: 12px; font-weight: bold; font-size: 14px; min-width: 120px; border-radius: 5px;"
-        self.btn_start.setStyleSheet(button_style + "background-color: #2e7d32; color: white;")
-        self.btn_pause.setStyleSheet(button_style + "background-color: #f9a825; color: black;")
-        self.btn_stop.setStyleSheet(button_style + "background-color: #c62828; color: white;")
+        # Apply the feedback styles (Hover/Pressed)
+        self.apply_button_feedback()
         
         self.btn_pause.setEnabled(False)
         self.btn_stop.setEnabled(False)
@@ -135,24 +130,60 @@ class AIWidget(QWidget):
         self.btn_pause.clicked.connect(self.pause_attendance)
         self.btn_stop.clicked.connect(self.stop_attendance)
 
+    def set_video_container_style(self, active=True):
+        """Changes the UI look of the video box when stream is on/off"""
+        text_color = "white" if active else "#555"
+        self.video_container.setStyleSheet(f"""
+            background-color: #000000; 
+            border: 2px solid #333; 
+            border-radius: 10px;
+            color: {text_color};
+            font-size: 18px;
+        """)
+
+    def apply_button_feedback(self):
+        """Adds hover, pressed, and disabled visual feedback to buttons"""
+        common = "padding: 12px; font-weight: bold; font-size: 14px; min-width: 120px; border-radius: 5px;"
+        
+        self.btn_start.setStyleSheet(f"""
+            QPushButton {{ {common} background-color: #2e7d32; color: white; }}
+            QPushButton:hover {{ background-color: #388e3c; }}
+            QPushButton:pressed {{ background-color: #1b5e20; }}
+            QPushButton:disabled {{ background-color: #1a301c; color: #555; }}
+        """)
+        
+        self.btn_pause.setStyleSheet(f"""
+            QPushButton {{ {common} background-color: #f9a825; color: black; }}
+            QPushButton:hover {{ background-color: #fbc02d; }}
+            QPushButton:pressed {{ background-color: #f57f17; }}
+            QPushButton:disabled {{ background-color: #40321a; color: #666; }}
+        """)
+        
+        self.btn_stop.setStyleSheet(f"""
+            QPushButton {{ {common} background-color: #c62828; color: white; }}
+            QPushButton:hover {{ background-color: #d32f2f; }}
+            QPushButton:pressed {{ background-color: #b71c1c; }}
+            QPushButton:disabled {{ background-color: #3b1a1a; color: #555; }}
+        """)
+
     def start_attendance(self):
         if not self.worker.isRunning():
-            # Get selected index from dropdown (0 or 1)
             selected_cam = self.cam_select.currentIndex()
             self.worker.set_camera(selected_cam)
-            
             self.worker.is_paused = False
             self.worker.start()
-            self.cam_select.setEnabled(False) # Lock selection while running
+            self.cam_select.setEnabled(False)
             self.status_box.setText(f"System: Initializing Camera {selected_cam}...")
             self.status_box.setStyleSheet("color: #00ff00; font-weight: bold; padding: 10px; background: #222;")
+            self.set_video_container_style(active=True)
         else:
-            self.worker.is_paused = False # Resume logic
+            self.worker.is_paused = False 
             self.status_box.setText("System: Resumed")
         
         self.btn_start.setEnabled(False)
         self.btn_pause.setEnabled(True)
         self.btn_stop.setEnabled(True)
+        self.btn_start.setText("▶ Start")
 
     def pause_attendance(self):
         self.worker.is_paused = True
@@ -163,10 +194,16 @@ class AIWidget(QWidget):
         self.status_box.setStyleSheet("color: #f9a825; font-weight: bold; padding: 10px; background: #222;")
 
     def stop_attendance(self):
-        self.worker.stop()
-        self.cam_select.setEnabled(True) # Unlock selection
-        self.video_container.clear()
+        """Completely stops the worker and cleans the UI area"""
+        if self.worker.isRunning():
+            self.worker.stop()
+        
+        # UI Cleanup
+        self.video_container.setPixmap(QPixmap()) # This clears the frozen frame
         self.video_container.setText("Stream Stopped")
+        self.set_video_container_style(active=False)
+        
+        self.cam_select.setEnabled(True) 
         self.status_box.setText("System: Stopped")
         self.status_box.setStyleSheet("color: #c62828; font-weight: bold; padding: 10px; background: #222;")
         
@@ -174,15 +211,18 @@ class AIWidget(QWidget):
         self.btn_start.setText("▶ Start")
         self.btn_pause.setEnabled(False)
         self.btn_stop.setEnabled(False)
+        self.worker.is_paused = False
 
     @Slot(QImage, list)
     def update_ui(self, qt_image, results):
-        pixmap = QPixmap.fromImage(qt_image)
-        self.video_container.setPixmap(pixmap.scaled(
-            self.video_container.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        
-        if results:
-            self.status_box.setText(f"System: Active - Detecting {len(results)} faces")
+        # Guard: Only update the screen if the worker is actually running and not paused
+        if self.worker.isRunning() and not self.worker.is_paused:
+            pixmap = QPixmap.fromImage(qt_image)
+            self.video_container.setPixmap(pixmap.scaled(
+                self.video_container.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            
+            if results:
+                self.status_box.setText(f"System: Active - Detecting {len(results)} faces")
 
     def closeEvent(self, event):
         self.worker.stop()
