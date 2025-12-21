@@ -51,9 +51,9 @@ class AttendanceSystem:
         # Attendance tracking
         self.today_attendance = self.load_today_attendance()
         
-        # Auto-capture settings (ADJUSTED FOR BETTER DETECTION)
-        self.recognition_threshold = 0.5  # Higher = more lenient (was 0.4)
-        self.confidence_threshold = 2  # Need N consecutive recognitions (was 3)
+        # Auto-capture settings
+        self.recognition_threshold = 0.5  
+        self.confidence_threshold = 3  
         self.cooldown_period = 3  # Seconds between captures (was 5)
         
         # Tracking for auto-capture

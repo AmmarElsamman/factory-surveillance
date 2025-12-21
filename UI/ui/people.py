@@ -300,12 +300,12 @@ class PeopleWidget(QWidget):
         
         # Worker information
         info_text = f"""
-        <b>{worker.full_name}
-        ID: {worker.employee_code}
-        Department: {worker.department or 'N/A'}
-        Role: {worker.role or 'N/A'}
-        Status: {worker.get_status_emoji()} {worker.status.title()}
-        Authorization: {worker.get_authorization_icon()} {'Authorized' if worker.is_authorized else 'Unauthorized'}
+        <b>{worker.full_name}</b><br>
+        ID: {worker.employee_code}<br>
+        Department: {worker.department or 'N/A'}<br>
+        Role: {worker.role or 'N/A'}<br>
+        Status: {worker.get_status_emoji()} {worker.status.title()}<br>
+        Authorization: {worker.get_authorization_icon()} {'Authorized' if worker.is_authorized else 'Unauthorized'}<br>
         Registered: {worker.registration_date.strftime('%Y-%m-%d') if worker.registration_date else 'N/A'}
         """
         
