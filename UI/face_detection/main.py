@@ -68,7 +68,7 @@ class AttendanceSystem:
         """Load all employee embeddings from JSON files"""
         print("Loading employee database...")
         try:
-            
+            start_time = time.perf_counter()
             response = requests.get(
                 f"{self.api_url}/api/worker_embeddings"
             )
@@ -76,6 +76,7 @@ class AttendanceSystem:
             rows = response.json().get('embeddings', [])
             if not rows:
                 raise ValueError("No embeddings returned from API.")
+            end_time = time.perf_counter()
             
             best = {}
             for row in rows:
