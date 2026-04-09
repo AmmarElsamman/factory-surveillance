@@ -28,7 +28,7 @@ ARCHIVE_AFTER_DAYS = 90
 AUTO_DELETE_AFTER_DAYS = 365
 
 # Database Settings
-DB_TYPE = "sqlite"  # or "postgresql", "mysql"
+DB_TYPE = "postgresql"
 DB_HOST = "localhost"
 DB_PORT = 5432
 DB_NAME = "s3s_system"

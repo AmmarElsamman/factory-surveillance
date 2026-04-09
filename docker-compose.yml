@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: surveillance-postgres
+    environment:
+      POSTGRES_USER: surveillance_app
+      POSTGRES_PASSWORD: djr6w32g
+      POSTGRES_DB: factory_surveillance_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_pgvector.py:/docker-entrypoint-initdb.d/init.py
+
+volumes:
+  postgres_data:

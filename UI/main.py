@@ -4,15 +4,6 @@ Main application entry point for the Surveillance & Security System UI
 import sys
 import os
 from pathlib import Path
-
-# --- STEP 1: RESOLVE PATHS (Fixes Import & File Loading Errors) ---
-current_file_path = Path(__file__).resolve()
-# Assuming structure: GRAD/UI/main.py. This gets us to the 'GRAD' root.
-project_root = current_file_path.parent.parent 
-if str(project_root) not in sys.path:
-    sys.path.append(str(project_root))
-# ----------------------------------------------------------------------------
-
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QStackedWidget
 from PySide6.QtCore import Qt, QTimer, QDateTime
 from PySide6.QtGui import QIcon, QFont, QColor, QLinearGradient, QPalette
@@ -35,14 +26,11 @@ from ui.utils.styles import apply_main_stylesheet
 from ui.ai import AIWidget
 from ui.helmet_vest import HelmetVestWidget
 
-# --- STEP 2: LOAD AI ENGINE ---
+# Load AI face detection module
 try:
     from face_detection.main import AttendanceSystem
 except ImportError as e:
     print(f"CRITICAL: Failed to import face_detection.main. Error: {e}")
-    class AdvancedAttendanceSystem: 
-        def __init__(self, *args, **kwargs): pass
-        def process_frame(self, frame): return frame, []
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -50,7 +38,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Surveillance & Security System")
         self.setGeometry(100, 100, 1920, 1080)
         
-        # 1. Initialize the AI Attendance Engine once to share memory
+        # Initialize the AI Attendance Engine once to share memory
         self.ai_engine = AttendanceSystem()
         
         apply_main_stylesheet(self)

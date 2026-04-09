@@ -1,0 +1,62 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# IDE files
+**/.vs/
+**/.vscode/.history
+**/.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Dependencies
+**/node_modules/
+**/packages/
+**/.nuget/
+
+# Logs
+*.log
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Test / coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Logs
+*.log
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db

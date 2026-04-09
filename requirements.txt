@@ -1,6 +1,5 @@
 insightface==0.7.3
 numpy==2.4.1
-psycopg2==2.9.11
 PySide6==6.10.1
 Requests==2.32.5
 ultralytics==8.4.5
@@ -12,3 +11,5 @@ sentence_transformers==5.2.0
 uvicorn==0.40.0
 opencv_python==4.11.0.86
 opencv_python_headless==4.11.0.86
+sqlalchemy==2.0.23
+sqlalchemy_utils==0.41.0

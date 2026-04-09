@@ -59,117 +59,114 @@ async def health_check():
 # Re-Identification Endpoints
 # ============================================
 
-@app.post("/api/reid/search-embedding")
-async def search_similar_embeddings(query: EmbeddingQuery):
-    """
-    Search for similar embeddings to identify a person.
+# @app.post("/api/reid/search-embedding")
+# async def search_similar_embeddings(query: EmbeddingQuery):
+#     """
+#     Search for similar embeddings to identify a person.
     
-    This is the MAIN Re-ID function.
+#     This is the MAIN Re-ID function.
     
-    Usage:
-    1. CV team detects person and extracts 512D embedding
-    2. Send embedding to this endpoint
-    3. Get back list of potential matches with similarity scores
-    4. If top match > threshold, it's the same person
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
+#     Usage:
+#     1. CV team detects person and extracts 512D embedding
+#     2. Send embedding to this endpoint
+#     3. Get back list of potential matches with similarity scores
+#     4. If top match > threshold, it's the same person
+#     """
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
     
-    model = SentenceTransformer('distiluse-base-multilingual-cased')
-    def to_pgvector(vec: np.ndarray) -> str:
-        return "[" + ",".join(map(str, vec.tolist())) + "]"
+#     model = SentenceTransformer('distiluse-base-multilingual-cased')
+#     def to_pgvector(vec: np.ndarray) -> str:
+#         return "[" + ",".join(map(str, vec.tolist())) + "]"
     
-    text = "John Doe works as Software Developer in Engineering department"
-    embedding = model.encode(text)
+#     text = "John Doe works as Software Developer in Engineering department"
+#     embedding = model.encode(text)
     
-    query2 = EmbeddingQuery(
-    feature_vector=embedding.tolist(),  # 512-dim vector with all 0.5
-    threshold=0.90,
-    max_results=2,
-    search_active_only=False
-)
+#     query2 = EmbeddingQuery(
+#     feature_vector=embedding.tolist(),  # 512-dim vector with all 0.5
+#     threshold=0.90,
+#     max_results=2,
+#     search_active_only=False
+# )
     
-    try:
-        # Convert list to PostgreSQL vector format
-        vector_str = json.dumps([float(x) for x in query2.feature_vector])
+#     try:
+#         # Convert list to PostgreSQL vector format
+#         vector_str = json.dumps([float(x) for x in query2.feature_vector])
         
         
-        # Search all registered workers (slower, fallback)
-        sql = """
-            SELECT 
-                we.embedding_id,
-                we.worker_id,
-                w.full_name as worker_name,
-                NULL as global_track_id,
-                NULL as current_camera_id,
-                NULL as last_seen,
-                1 - (we.feature_vector <=> %s::vector) as similarity
-            FROM worker_embeddings we
-            JOIN workers w ON we.worker_id = w.worker_id
-            WHERE we.is_primary = true
-                AND w.status = 'active'
-            ORDER BY similarity DESC
-            LIMIT %s
-        """
-        cursor.execute(sql, (vector_str, query2.max_results))
-        matches = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return {"matches": matches, "count": len(matches)}
+#         # Search all registered workers (slower, fallback)
+#         sql = """
+#             SELECT 
+#                 we.embedding_id,
+#                 we.worker_id,
+#                 w.full_name as worker_name,
+#                 NULL as global_track_id,
+#                 NULL as current_camera_id,
+#                 NULL as last_seen,
+#                 1 - (we.feature_vector <=> %s::vector) as similarity
+#             FROM worker_embeddings we
+#             JOIN workers w ON we.worker_id = w.worker_id
+#             WHERE we.is_primary = true
+#                 AND w.status = 'active'
+#             ORDER BY similarity DESC
+#             LIMIT %s
+#         """
+#         cursor.execute(sql, (vector_str, query2.max_results))
+#         matches = cursor.fetchall()
+#         cursor.close()
+#         conn.close()
+#         return {"matches": matches, "count": len(matches)}
         
     
-    except Exception as e:
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=500, detail=f"Embedding search failed: {str(e)}")
+#     except Exception as e:
+#         cursor.close()
+#         conn.close()
+#         raise HTTPException(status_code=500, detail=f"Embedding search failed: {str(e)}")
 
-@app.get("/api/reid/active-tracks")
-async def get_active_track_embeddings():
-    """
-    Get embeddings of all currently active tracks.
-    Used for cross-camera re-identification.
+# @app.get("/api/reid/active-tracks")
+# async def get_active_track_embeddings():
+#     """
+#     Get embeddings of all currently active tracks.
+#     Used for cross-camera re-identification.
     
-    When person appears at Camera 2, compare against all active tracks
-    from other cameras to see if they just moved.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
+#     When person appears at Camera 2, compare against all active tracks
+#     from other cameras to see if they just moved.
+#     """
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
     
-    cursor.execute("""
-        SELECT 
-            gt.global_track_id,
-            gt.worker_id,
-            w.full_name,
-            gt.current_camera_id,
-            c.location_name,
-            gt.last_seen,
-            we.feature_vector,
-            we.embedding_id
-        FROM global_tracks gt
-        LEFT JOIN workers w ON gt.worker_id = w.worker_id
-        LEFT JOIN cameras c ON gt.current_camera_id = c.camera_id
-        LEFT JOIN worker_embeddings we ON w.worker_id = we.worker_id AND we.is_primary = true
-        WHERE gt.track_status = 'active'
-            AND gt.last_seen > NOW() - INTERVAL '5 minutes'
-        ORDER BY gt.last_seen DESC
-    """)
+#     cursor.execute("""
+#         SELECT 
+#             gt.global_track_id,
+#             gt.worker_id,
+#             w.full_name,
+#             gt.current_camera_id,
+#             c.location_name,
+#             gt.last_seen,
+#             we.feature_vector,
+#             we.embedding_id
+#         FROM global_tracks gt
+#         LEFT JOIN workers w ON gt.worker_id = w.worker_id
+#         LEFT JOIN cameras c ON gt.current_camera_id = c.camera_id
+#         LEFT JOIN worker_embeddings we ON w.worker_id = we.worker_id AND we.is_primary = true
+#         WHERE gt.track_status = 'active'
+#             AND gt.last_seen > NOW() - INTERVAL '5 minutes'
+#         ORDER BY gt.last_seen DESC
+#     """)
     
-    tracks = cursor.fetchall()
-    cursor.close()
-    conn.close()
+#     tracks = cursor.fetchall()
+#     cursor.close()
+#     conn.close()
     
-    return {
-        "active_tracks": tracks,
-        "count": len(tracks)
-    }
-    
-    
-    # TODO:
-    # When registering new worker or updating their appearance
-    # GET /api/reid/worker/{worker_id}/embeddings
+#     return {
+#         "active_tracks": tracks,
+#         "count": len(tracks)
+#     }
     
     
-    
+#     # TODO:
+#     # When registering new worker or updating their appearance
+#     # GET /api/reid/worker/{worker_id}/embeddings
 
 # ============================================
 # Track Management Endpoints
@@ -335,7 +332,6 @@ async def update_global_track(global_track_id: str, update: UpdateGlobalTrack):
         conn.close()
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/api/reid/tracks/{global_track_id}/close")
 async def close_global_track(global_track_id: str):
     """
@@ -371,8 +367,6 @@ async def close_global_track(global_track_id: str):
         cursor.close()
         conn.close()
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 # Msh 3arf hnst5dmo ezay lsa
 @app.post("/api/reid/tracks/{global_track_id}/link-worker")
@@ -565,9 +559,8 @@ async def get_worker_embeddings():
     
     return {"embeddings": embeddings}
 
-
-@app.post("/api/worker_embeddings/single_embedding/{employee_code}")
-async def insert_single_worker_embedding(employee_code: str):
+@app.post("/api/worker_embeddings/{employee_code}")
+async def insert_worker_embedding(employee_code: str):
     """Insert a single embedding for a worker (for testing)"""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -689,7 +682,6 @@ async def upload_embedding():
         conn.close()    
     
     return {"status": "embeddings uploaded"}
-
 
 @app.get("/api/workers/{worker_id}/location", response_model=WorkerLocation)
 async def get_worker_location(worker_id: str):

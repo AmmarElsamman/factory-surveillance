@@ -3,6 +3,8 @@ import time
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QComboBox
 from PySide6.QtCore import Qt, QThread, Signal, Slot
 from PySide6.QtGui import QImage, QPixmap
+
+# Load helmet and vest detection module
 from person_helmet.logic import HelmetVestEngine
 
 class HelmetWorker(QThread):

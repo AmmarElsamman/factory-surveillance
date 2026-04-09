@@ -4,10 +4,11 @@ Dashboard view - Command Center
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QLabel, QScrollArea
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from UI.repositories.alert_repository import AlertRepository
-from UI.repositories.camera_repository import CameraRepository
+from repositories.alert_repository import AlertRepository
+from repositories.camera_repository import CameraRepository
 from ui.utils.components import StatCard, ChartPlaceholder, EventItem
 from ui.utils.styles import COLORS
+
 
 
 

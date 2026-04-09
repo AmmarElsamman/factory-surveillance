@@ -3,76 +3,120 @@
 -- ============================================
 
 -- Insert Sample Cameras
-INSERT INTO cameras (camera_id, location_name, zone_type, coordinates) VALUES
-('CAM_001', 'Main Entrance', 'general', '{"x": 0, "y": 0}'),
-('CAM_002', 'Assembly Line A', 'general', '{"x": 50, "y": 20}'),
-('CAM_003', 'Assembly Line B', 'general', '{"x": 50, "y": 40}'),
-('CAM_004', 'Warehouse', 'restricted', '{"x": 100, "y": 30}'),
-('CAM_005', 'Loading Dock', 'general', '{"x": 120, "y": 50}'),
-('CAM_006', 'Office Area', 'office', '{"x": 30, "y": 60}');
-
--- Insert Sample Workers
-INSERT INTO workers (employee_code, full_name, department, role) VALUES
-('EMP001', 'John Doe', 'Manufacturing', 'Assembly Worker'),
-('EMP002', 'Jane Smith', 'Manufacturing', 'Line Supervisor'),
-('EMP003', 'Bob Johnson', 'Warehouse', 'Forklift Operator'),
-('EMP004', 'Alice Williams', 'Warehouse', 'Inventory Manager'),
-('EMP005', 'Charlie Brown', 'Maintenance', 'Technician'),
-('EMP006', 'Diana Prince', 'Quality Control', 'Inspector'),
-('EMP007', 'Eve Davis', 'Manufacturing', 'Assembly Worker'),
-('EMP008', 'Frank Miller', 'Security', 'Guard');
-
--- Insert Sample Global Tracks (some active workers)
-INSERT INTO global_tracks (worker_id, current_camera_id, track_status, first_seen, last_seen, confidence_level, helmet_status) VALUES
+INSERT INTO cameras (
+    camera_id,
+    location_name,
+    zone_type,
+    coordinates,
+    ip_address,
+    status,
+    field_of_view,
+    installation_date
+) VALUES
 (
-    (SELECT worker_id FROM workers WHERE employee_code = 'EMP001'),
-    'CAM_002',
-    'active',
-    NOW() - INTERVAL '30 minutes',
-    NOW() - INTERVAL '2 minutes',
-    95,
-    'compliant'
+    'CAM-001',
+    'Main Gate Entrance',
+    'Entrance',
+    '{"lat": 30.0444, "lng": 31.2357}',
+    '192.168.1.10',
+    'online',
+    '{"angle": 120, "range_meters": 30}',
+    '2024-01-10'
 ),
 (
-    (SELECT worker_id FROM workers WHERE employee_code = 'EMP003'),
-    'CAM_004',
-    'active',
-    NOW() - INTERVAL '1 hour',
-    NOW() - INTERVAL '1 minute',
-    92,
-    'violation'
+    'CAM-002',
+    'Warehouse Zone A',
+    'Warehouse',
+    '{"lat": 30.0451, "lng": 31.2362}',
+    '192.168.1.11',
+    'online',
+    '{"angle": 90, "range_meters": 40}',
+    '2024-01-12'
+),
+(
+    'CAM-003',
+    'Parking Area',
+    'Outdoor',
+    '{"lat": 30.0438, "lng": 31.2349}',
+    '192.168.1.12',
+    'offline',
+    '{"angle": 140, "range_meters": 50}',
+    '2024-01-15'
+),
+(
+    'CAM-004',
+    'Control Room',
+    'Indoor',
+    '{"lat": 30.0449, "lng": 31.2351}',
+    '192.168.1.13',
+    'online',
+    '{"angle": 110, "range_meters": 20}',
+    '2024-01-18'
+),
+(
+    'CAM-005',
+    'Back Exit',
+    'Exit',
+    '{"lat": 30.0440, "lng": 31.2370}',
+    '192.168.1.14',
+    'maintenance',
+    '{"angle": 100, "range_meters": 25}',
+    '2024-01-20'
 );
 
--- Insert Sample Detection Events
-INSERT INTO detection_events (global_track_id, camera_id, timestamp, bounding_box, helmet_detected, confidence_score, local_track_id)
-SELECT 
-    gt.global_track_id,
-    gt.current_camera_id,
-    NOW() - (random() * INTERVAL '30 minutes'),
-    json_build_object('x', floor(random() * 1920)::int, 'y', floor(random() * 1080)::int, 'width', 80, 'height', 200)::jsonb,
-    random() > 0.3,  -- 70% wearing helmets
-    0.85 + (random() * 0.14),  -- confidence between 0.85 and 0.99
-    'CAM_' || gt.current_camera_id || '_T' || lpad(floor(random() * 100)::text, 3, '0')
-FROM global_tracks gt
-CROSS JOIN generate_series(1, 20);  -- 20 detections per track
 
--- Insert Sample Alerts
-INSERT INTO alerts (alert_type, global_track_id, camera_id, timestamp, severity, status, description) VALUES
+-- Insert Sample Workers
+INSERT INTO workers (
+    employee_code,
+    full_name,
+    department,
+    role,
+    is_authorized,
+    status,
+    contact_info
+) VALUES
 (
-    'helmet_violation',
-    (SELECT global_track_id FROM global_tracks WHERE helmet_status = 'violation' LIMIT 1),
-    'CAM_004',
-    NOW() - INTERVAL '5 minutes',
-    'high',
-    'new',
-    'Worker detected without helmet in warehouse area'
+    'EMP-001',
+    'Ahmed Hassan',
+    'Security',
+    'Security Officer',
+    true,
+    'active',
+    '{"phone": "+201001112233", "email": "ahmed.hassan@company.com"}'
 ),
 (
-    'intruder',
-    gen_random_uuid(),
-    'CAM_001',
-    NOW() - INTERVAL '15 minutes',
-    'critical',
-    'acknowledged',
-    'Unidentified person detected at main entrance'
+    'EMP-002',
+    'Mohamed Ali',
+    'Operations',
+    'Shift Supervisor',
+    true,
+    'active',
+    '{"phone": "+201022233344", "email": "mohamed.ali@company.com"}'
+),
+(
+    'EMP-003',
+    'Sara Ibrahim',
+    'Administration',
+    'HR Specialist',
+    false,
+    'inactive',
+    '{"phone": "+201033344455", "email": "sara.ibrahim@company.com"}'
+),
+(
+    'EMP-004',
+    'Omar Youssef',
+    'IT',
+    'System Administrator',
+    true,
+    'active',
+    '{"phone": "+201044455566", "email": "omar.youssef@company.com"}'
+),
+(
+    'EMP-005',
+    'Mona Abdelrahman',
+    'Security',
+    'Control Room Operator',
+    true,
+    'active',
+    '{"phone": "+201055566677", "email": "mona.abdelrahman@company.com"}'
 );
