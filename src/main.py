@@ -21,14 +21,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS (for frontend to access)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URL
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 
 # ============================================
 # Health Check
@@ -493,17 +486,17 @@ async def get_cameras():
     """Get all cameras"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT camera_id, location_name, zone_type, status
-        FROM cameras
-        ORDER BY camera_id
-    """)
-    
-    cameras = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
+    try:
+        cursor.execute("""
+            SELECT camera_id, location_name, zone_type, status
+            FROM cameras
+            ORDER BY camera_id
+        """)    
+        cameras = cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+        
     return {"cameras": cameras}
 
 @app.get("/api/workers")
@@ -511,25 +504,25 @@ async def get_workers(status: Optional[str] = Query(None)):
     """Get all workers, optionally filtered by status"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    if status:
-        cursor.execute("""
-            SELECT worker_id, employee_code, full_name, department, role, status
-            FROM workers
-            WHERE status = %s
-            ORDER BY full_name
-        """, (status,))
-    else:
-        cursor.execute("""
-            SELECT worker_id, employee_code, full_name, department, role, status
-            FROM workers
-            ORDER BY full_name
-        """)
-    
-    workers = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
+    try:    
+        if status:
+            cursor.execute("""
+                SELECT worker_id, employee_code, full_name, department, role, status
+                FROM workers
+                WHERE status = %s
+                ORDER BY full_name
+            """, (status,))
+        else:
+            cursor.execute("""
+                SELECT worker_id, employee_code, full_name, department, role, status
+                FROM workers
+                ORDER BY full_name
+            """)
+        workers = cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+        
     return {"workers": workers}
 
 @app.get("/api/worker_embeddings")
@@ -537,26 +530,26 @@ async def get_worker_embeddings():
     """Get all workers embeddings"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT 
-            we.embedding_id,
-            we.worker_id,
-            w.full_name,
-            we.feature_vector,
-            we.quality_score,
-            we.camera_id,
-            we.is_primary,
-            we.created_at
-        FROM worker_embeddings we
-        JOIN workers w ON we.worker_id = w.worker_id
-        ORDER BY w.full_name
-    """)
-    
-    embeddings = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    
+    try:    
+        cursor.execute("""
+            SELECT 
+                we.embedding_id,
+                we.worker_id,
+                w.full_name,
+                we.feature_vector,
+                we.quality_score,
+                we.camera_id,
+                we.is_primary,
+                we.created_at
+            FROM worker_embeddings we
+            JOIN workers w ON we.worker_id = w.worker_id
+            ORDER BY w.full_name
+        """)
+        embeddings = cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+        
     return {"embeddings": embeddings}
 
 @app.post("/api/worker_embeddings/{employee_code}")
@@ -688,27 +681,27 @@ async def get_worker_location(worker_id: str):
     """Get current location of a specific worker"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT 
-            w.worker_id,
-            w.full_name,
-            gt.current_camera_id as camera_id,
-            c.location_name,
-            gt.last_seen,
-            gt.helmet_status
-        FROM global_tracks gt
-        JOIN workers w ON gt.worker_id = w.worker_id
-        JOIN cameras c ON gt.current_camera_id = c.camera_id
-        WHERE w.worker_id = %s 
-          AND gt.track_status = 'active'
-        ORDER BY gt.last_seen DESC
-        LIMIT 1
-    """, (worker_id,))
-    
-    result = cursor.fetchone()
-    cursor.close()
-    conn.close()
+    try:
+        cursor.execute("""
+            SELECT 
+                w.worker_id,
+                w.full_name,
+                gt.current_camera_id as camera_id,
+                c.location_name,
+                gt.last_seen,
+                gt.helmet_status
+            FROM global_tracks gt
+            JOIN workers w ON gt.worker_id = w.worker_id
+            JOIN cameras c ON gt.current_camera_id = c.camera_id
+            WHERE w.worker_id = %s 
+            AND gt.track_status = 'active'
+            ORDER BY gt.last_seen DESC
+            LIMIT 1
+        """, (worker_id,))
+        result = cursor.fetchone()
+    finally:
+        cursor.close()
+        conn.close()
     
     if not result:
         raise HTTPException(status_code=404, detail="Worker not found or not currently tracked")

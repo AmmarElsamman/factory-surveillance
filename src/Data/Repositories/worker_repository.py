@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import List, Optional
 from .base import BaseRepository
 from .base import IRepository
-from ...Entites.worker import Worker
+from ...Entites.Worker import Worker
 from ...Utils.logger import logger
 from ...enums import WorkerStatus
+import json
 
 class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
     """
@@ -16,12 +17,12 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
         query = """
             INSERT INTO workers 
             (worker_id, employee_code, full_name, department, role,
-             is_authorized, registration_date, status, contact_info, created_at, updated_ate)
+             is_authorized, registration_date, status, contact_info, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING worker_id
         """
         
-        import json
+        
         self._execute(query, (
             worker.worker_id,
             worker.employee_code,
@@ -75,7 +76,7 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
     def update(self, worker: Worker) -> bool:
         """Update existing worker"""
         
-        import json
+        
         query = """
             UPDATE workers
             SET employee_code = %s,
@@ -128,7 +129,7 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
         self._execute(query, (limit, offset))
         rows = self._fetch_all()
         
-        return [self._map_to_entry(row) for row in rows]
+        return [self._map_to_entity(row) for row in rows]
     
     def find_active_workers(self) -> List[Worker]:
         """Find all active workers"""
@@ -141,7 +142,7 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
         self._execute(query)
         rows = self._fetch_all()
         
-        return [self._map_to_entry(row) for row in rows]
+        return [self._map_to_entity(row) for row in rows]
     
     def find_by_department(self, department: str) -> List[Worker]:
         """Find workers by department"""
@@ -155,11 +156,11 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
         self._execute(query, (department,))
         rows = self._fetch_all()
         
-        return [self._map_to_entry(row) for row in rows]
+        return [self._map_to_entity(row) for row in rows]
     
     def _map_to_entity(self, row: dict) -> Worker:
         """Map database row to Worker entity"""
-        import json
+        
         return Worker(
             worker_id=row['worker_id'],
             employee_code=row['employee_code'],

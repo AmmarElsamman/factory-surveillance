@@ -24,7 +24,7 @@ class UnitOfWork:
     def __enter__(self):
         """Enter context manager"""
         
-        self._connection = db_connection.get_connection()
+        self._connection = db_connection._pool.getconn()
         self._cursor = self._connection.cursor()
         
         # * Initialize repositories with the same cursor (same connection / same transaction)
@@ -33,7 +33,7 @@ class UnitOfWork:
         logger.debug("UnitOfWork started")
         return self
     
-    def __exit__(self, exc_type, exc_val):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         """Exit context manager"""
         
         try:
@@ -49,7 +49,7 @@ class UnitOfWork:
             if self._cursor:
                 self._cursor.close()
             if self._connection:
-                db_connection.close_all()
+                db_connection._pool.putconn(self._connection)
             logger.debug("UnitOfWork closed")
     
     def commit(self):

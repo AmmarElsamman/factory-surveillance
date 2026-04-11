@@ -14,9 +14,9 @@ class Worker:
     Worker Entity
     Represents a registered employee
     """
+    employee_code: str
+    full_name: str
     worker_id: str = field(default_factory=lambda: str(uuid4()))
-    employee_code: str = ""
-    full_name: str = ""
     department: Optional[str] = None
     role: Optional[str] = None
     is_authorized: bool = True
@@ -30,11 +30,13 @@ class Worker:
         """Deactivate worker"""
         self.status = WorkerStatus.INACTIVE
         self.is_authorized = False
+        self.updated_at = datetime.now()
     
     def reactivate(self) -> None:
         """Reactivate worker"""
         self.status = WorkerStatus.ACTIVE
         self.is_authorized = True
+        self.updated_at = datetime.now()
     
     def update_info(
         self,
@@ -49,3 +51,4 @@ class Worker:
             self.department = department
         if role:
             self.role = role
+        self.updated_at = datetime.now()
