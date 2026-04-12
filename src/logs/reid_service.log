@@ -1,17 +1,14 @@
-2026-04-12 15:10:21 - Data.connection - ERROR - connection.py:46 - Failed to initialize connection pool: connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused
-	Is the server running on that host and accepting TCP/IP connections?
-
-2026-04-12 15:11:40 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
-2026-04-12 23:17:16 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
-2026-04-12 23:17:59 - Data.unit_of_work - WARNING - unit_of_work.py:53 - UnitOfWork rolled back due to: 404: Worker not found
-2026-04-12 23:19:05 - Data.unit_of_work - WARNING - unit_of_work.py:53 - UnitOfWork rolled back due to: Database query failed: insert or update on table "worker_embeddings" violates foreign key constraint "worker_embeddings_camera_id_fkey"
-DETAIL:  Key (camera_id)=(REGISTRATION) is not present in table "cameras".
-
-2026-04-12 23:21:22 - Data.unit_of_work - WARNING - unit_of_work.py:53 - UnitOfWork rolled back due to: Database query failed: insert or update on table "worker_embeddings" violates foreign key constraint "worker_embeddings_camera_id_fkey"
-DETAIL:  Key (camera_id)=(REGISTRATION) is not present in table "cameras".
-
-2026-04-12 23:22:13 - Data.Repositories.WorkerEmbedding_Repository - INFO - WorkerEmbedding_Repository.py:39 - Worker embedding for worker c2e29e4e-b9de-4e72-b20a-9d76adfb4dfd added to database
-2026-04-12 23:22:13 - Data.Repositories.WorkerEmbedding_Repository - INFO - WorkerEmbedding_Repository.py:126 - Embedding 3 set as primary for worker c2e29e4e-b9de-4e72-b20a-9d76adfb4dfd
-2026-04-12 23:59:29 - Data.Repositories.WorkerEmbedding_Repository - INFO - WorkerEmbedding_Repository.py:39 - Worker embedding for worker c2e29e4e-b9de-4e72-b20a-9d76adfb4dfd added to database
-2026-04-12 23:59:29 - Data.Repositories.WorkerEmbedding_Repository - INFO - WorkerEmbedding_Repository.py:126 - Embedding 4 set as primary for worker c2e29e4e-b9de-4e72-b20a-9d76adfb4dfd
-2026-04-13 00:26:22 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:35:06 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:35:45 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:35:55 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:37:02 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:37:34 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:37:44 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:40:22 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:41:04 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:41:15 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:42:13 - Data.unit_of_work - WARNING - unit_of_work.py:53 - UnitOfWork rolled back due to: the JSON object must be str, bytes or bytearray, not dict
+2026-04-12 14:45:52 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:46:01 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:46:42 - Data.unit_of_work - WARNING - unit_of_work.py:53 - UnitOfWork rolled back due to: 'str' object has no attribute 'value'
+2026-04-12 14:47:35 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
