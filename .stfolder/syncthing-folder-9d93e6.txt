@@ -1,5 +1,0 @@
-# This directory is a Syncthing folder marker.
-# Do not delete.
-
-folderID: xvelo-grefi
-created: 2026-01-22T20:46:01+02:00

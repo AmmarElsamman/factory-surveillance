@@ -468,6 +468,16 @@ async def get_workers(status: Optional[str] = Query(None)):
             workers = uow.workers.list_all()
         return {"workers": workers}
 
+@app.get("/api/worker/{employee_code}")
+async def get_worker_by_employee_id(employee_code: str):
+    """Get worker details by employee ID"""
+    with UnitOfWork() as uow:
+        worker = uow.workers.get_by_employee_code(employee_code=employee_code)
+        if worker:
+            return {"worker": worker}
+        else:
+            raise HTTPException(status_code=404, detail="Worker not found")
+
 @app.get("/api/worker_embeddings")
 async def get_worker_embeddings():
     """Get all workers embeddings"""

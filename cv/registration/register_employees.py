@@ -2,21 +2,19 @@
 register.py
 Employee registration system with multiple photos -> single embedding
 """
-
+ 
 import cv2
+import requests
 import numpy as np
-from datetime import datetime
 from pathlib import Path
 import shutil
-import json
 from insightface.app import FaceAnalysis
-
-
+ 
+API_URL = "http://localhost:8000"
+ 
 class RegistrationSystem:
-    def __init__(self, db_path='grad-project/employee_data'):
+    def __init__(self):
         """Initialize registration system"""
-        self.db_path = Path(db_path)
-        self.db_path.mkdir(exist_ok=True)
         
         # Initialize InsightFace
         print("Initializing face detection system...")
@@ -25,23 +23,23 @@ class RegistrationSystem:
                 name='buffalo_l',
                 providers=['CUDAExecutionProvider']
             )
-            self.app.prepare(ctx_id=0, det_size=(640, 640))  # Larger size
+            self.app.prepare(ctx_id=0, det_size=(640, 640))
             print("✅ Running on GPU")
         except:
             self.app = FaceAnalysis(
                 name='buffalo_l',
                 providers=['CPUExecutionProvider']
             )
-            self.app.prepare(ctx_id=-1, det_size=(640, 640))  # Larger size
+            self.app.prepare(ctx_id=-1, det_size=(640, 640))
             print("✅ Running on CPU")
     
-    def register_employee(self, emp_id, emp_name, image_paths):
+    def register_employee(self, emp_code, emp_name, image_paths):
         """
         Register employee with multiple photos
-        Computes and saves ONLY ONE averaged embedding
+        Computes ONE averaged embedding and saves it to the database
         """
         print(f"\n{'='*60}")
-        print(f"Registering: {emp_name} ({emp_id})")
+        print(f"Registering: {emp_name} ({emp_code})")
         print(f"{'='*60}")
         
         embeddings = []
@@ -92,16 +90,16 @@ class RegistrationSystem:
         if successful == 0:
             return False, "No valid photos processed"
         
-        # Calculate AVERAGE embedding
+        # Calculate AVERAGE embedding and normalize
         avg_embedding = np.mean(embeddings, axis=0)
-        # Normalize
         avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
         
-        # Quality metrics
+        # Calculate quality score from consistency between photos
+        avg_sim = 1.0
         if len(embeddings) > 1:
             similarities = [np.dot(avg_embedding, emb) for emb in embeddings]
-            avg_sim = np.mean(similarities)
-            min_sim = np.min(similarities)
+            avg_sim = float(np.mean(similarities))
+            min_sim = float(np.min(similarities))
             
             print(f"\n📊 Quality Metrics:")
             print(f"   Average similarity: {avg_sim:.4f}")
@@ -111,89 +109,44 @@ class RegistrationSystem:
                 print("   ⚠️  Warning: Photos have low consistency")
                 print("   💡 Tip: Use similar lighting and angles")
         
-        # Save ONLY the average embedding as JSON
-        emp_file = self.db_path / f"{emp_id}.json"
-        
-        # Prepare data for JSON (convert numpy to list)
-        save_data = {
-            'embedding': avg_embedding.tolist(),  # Convert to list for JSON
-            'name': emp_name,
-            'registered_date': datetime.now().isoformat(),
-            'num_photos_used': successful
-        }
-        
-        with open(emp_file, 'w') as f:
-            json.dump(save_data, f, indent=2)
-        
-        print(f"\n✅ Successfully registered {emp_name}")
-        print(f"📁 Saved as: {emp_file.name}")
-        print(f"📊 Used {successful} photos to create profile")
-        print(f"💾 File size: {emp_file.stat().st_size / 1024:.1f} KB")
-        
-        return True, f"Registered with {successful} photos"
-    
-    def list_employees(self):
-        """List all registered employees"""
-        employees = list(self.db_path.glob('*.json'))
-        
-        if not employees:
-            print("\n❌ No employees registered yet")
-            return
-        
-        print(f"\n{'='*60}")
-        print(f"👥 REGISTERED EMPLOYEES ({len(employees)})")
-        print(f"{'='*60}")
-        
-        total_size = 0
-        for emp_file in sorted(employees):
-            with open(emp_file, 'r') as f:
-                data = json.load(f)
-            
-            emp_id = emp_file.stem
-            name = data['name']
-            date = data['registered_date'][:10]
-            num_photos = data['num_photos_used']
-            size_kb = emp_file.stat().st_size / 1024
-            total_size += size_kb
-            
-            print(f"\n{emp_id}: {name}")
-            print(f"  Registered: {date}")
-            print(f"  Photos used: {num_photos}")
-            print(f"  Size: {size_kb:.1f} KB")
-        
-        print(f"\n{'='*60}")
-        print(f"Total storage: {total_size:.1f} KB")
-        print(f"{'='*60}\n")
-    
-    def delete_employee(self, emp_id):
-        """Delete an employee"""
-        emp_file = self.db_path / f"{emp_id}.json"
-        
-        if not emp_file.exists():
-            print(f"❌ Employee {emp_id} not found")
-            return False
-        
-        with open(emp_file, 'r') as f:
-            data = json.load(f)
-        name = data['name']
-        
-        confirm = input(f"⚠️  Delete {name} ({emp_id})? (yes/no): ").strip().lower()
-        
-        if confirm == 'yes':
-            emp_file.unlink()
-            print(f"✅ Deleted {name}")
-            return True
-        
-        print("❌ Cancelled")
-        return False
-
-
-def capture_photos_webcam(emp_id, emp_name, num_photos=5):
+        # Look up worker_id from API using employee_code
+        try:
+            response = requests.get(f"{API_URL}/api/worker/{emp_code}")
+            if response.status_code == 200:
+                worker_id = response.json()['worker']['worker_id']
+                
+                # Save embedding to database
+                embed_response = requests.post(
+                    f"{API_URL}/api/worker_embeddings",
+                    json={
+                        "worker_id": worker_id,
+                        "camera_id": "CAM-001",
+                        "feature_vector": avg_embedding.tolist(),
+                        "quality_score": avg_sim,
+                        "is_primary": True
+                    }
+                )
+                if embed_response.status_code == 200:
+                    print(f"\n✅ Successfully registered {emp_name}")
+                    print(f"📊 Used {successful} photos to create profile")
+                    return True, f"Registered with {successful} photos"
+                else:
+                    print(f"❌ Failed to save embedding: {embed_response.text}")
+                    return False, "Failed to save embedding to database"
+            else:
+                print(f"❌ Worker {emp_code} not found in database")
+                return False, f"Worker {emp_code} not found in database"
+        except Exception as e:
+            print(f"❌ Could not connect to API: {e}")
+            return False, f"API connection error: {e}"
+ 
+ 
+def capture_photos_webcam(emp_code, emp_name, num_photos=5):
     """Capture multiple photos from webcam"""
     print(f"\n{'='*60}")
     print(f"📸 MULTI-PHOTO CAPTURE")
     print(f"{'='*60}")
-    print(f"Employee: {emp_name} ({emp_id})")
+    print(f"Employee: {emp_name} ({emp_code})")
     print(f"Photos to capture: {num_photos}")
     
     poses = [
@@ -220,7 +173,6 @@ def capture_photos_webcam(emp_id, emp_name, num_photos=5):
         print("❌ Could not open camera")
         return None
     
-    # Temp folder
     temp_folder = Path('temp_registration')
     temp_folder.mkdir(exist_ok=True)
     
@@ -234,18 +186,15 @@ def capture_photos_webcam(emp_id, emp_name, num_photos=5):
         
         instruction = poses[count] if count < len(poses) else f"Photo {count+1}"
         
-        # Create overlay
         overlay = frame.copy()
         cv2.rectangle(overlay, (0, 0), (frame.shape[1], 120), (0, 0, 0), -1)
         cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
         
-        # Instructions
         cv2.putText(frame, f"Photo {count+1}/{num_photos}: {instruction}", 
                    (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
         cv2.putText(frame, "SPACE = capture | ESC = cancel", 
                    (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         
-        # Guide box
         h, w = frame.shape[:2]
         gw, gh = w//3, h//2
         gx, gy = (w-gw)//2, (h-gh)//2
@@ -257,13 +206,12 @@ def capture_photos_webcam(emp_id, emp_name, num_photos=5):
         
         key = cv2.waitKey(1) & 0xFF
         
-        if key == ord(' '):  # SPACE
-            photo_path = temp_folder / f"{emp_id}_{count:02d}.jpg"
+        if key == ord(' '):
+            photo_path = temp_folder / f"{emp_code}_{count:02d}.jpg"
             cv2.imwrite(str(photo_path), frame)
             captured.append(str(photo_path))
             count += 1
             
-            # Flash effect
             white = frame.copy()
             cv2.rectangle(white, (0, 0), (w, h), (255, 255, 255), -1)
             cv2.imshow('Registration - Photo Capture', white)
@@ -283,8 +231,8 @@ def capture_photos_webcam(emp_id, emp_name, num_photos=5):
     
     print(f"\n✅ All {num_photos} photos captured successfully!\n")
     return captured
-
-
+ 
+ 
 def register_live():
     """Live webcam registration"""
     system = RegistrationSystem()
@@ -293,9 +241,9 @@ def register_live():
     print("📸 LIVE WEBCAM REGISTRATION")
     print("="*60)
     
-    emp_id = input("\nEmployee ID (e.g., EMP001): ").strip().upper()
-    if not emp_id:
-        print("❌ Employee ID is required!")
+    emp_code = input("\nEmployee Code (e.g., EMP001): ").strip().upper()
+    if not emp_code:
+        print("❌ Employee Code is required!")
         return
     
     emp_name = input("Employee Name: ").strip()
@@ -303,41 +251,20 @@ def register_live():
         print("❌ Employee Name is required!")
         return
     
-    # Check if exists
-    emp_file = system.db_path / f"{emp_id}.json"
-    if emp_file.exists():
-        print(f"\n⚠️  {emp_id} already exists!")
-        choice = input("Options: (o)verwrite | (d)ifferent ID | (c)ancel: ").strip().lower()
-        
-        if choice == 'o':
-            emp_file.unlink()
-            print("✅ Previous record deleted")
-        elif choice == 'd':
-            emp_id = input("New Employee ID: ").strip().upper()
-            if not emp_id:
-                print("❌ Cancelled")
-                return
-        else:
-            print("❌ Cancelled")
-            return
-    
-    # Number of photos
     num_input = input("\nNumber of photos (3-10, default 5): ").strip()
     num_photos = int(num_input) if num_input.isdigit() else 5
     num_photos = max(3, min(10, num_photos))
     
-    # Capture photos
-    photo_paths = capture_photos_webcam(emp_id, emp_name, num_photos)
+    photo_paths = capture_photos_webcam(emp_code, emp_name, num_photos)
     
     if not photo_paths:
         return
     
-    # Process and register
     print("="*60)
     print("🔄 Processing photos...")
     print("="*60)
     
-    success, message = system.register_employee(emp_id, emp_name, photo_paths)
+    success, message = system.register_employee(emp_code, emp_name, photo_paths)
     
     # Cleanup temp files
     for photo in photo_paths:
@@ -346,12 +273,10 @@ def register_live():
     if temp_folder.exists():
         temp_folder.rmdir()
     
-    if success:
-        print(f"\n🎉 {emp_name} registered successfully!")
-    else:
+    if not success:
         print(f"\n❌ Registration failed: {message}")
-
-
+ 
+ 
 def register_from_folder():
     """Register from existing folder of photos"""
     system = RegistrationSystem()
@@ -360,11 +285,11 @@ def register_from_folder():
     print("📁 REGISTER FROM FOLDER")
     print("="*60)
     
-    emp_id = input("\nEmployee ID: ").strip().upper()
+    emp_code = input("\nEmployee Code: ").strip().upper()
     emp_name = input("Employee Name: ").strip()
     folder = input("Folder path: ").strip()
     
-    if not all([emp_id, emp_name, folder]):
+    if not all([emp_code, emp_name, folder]):
         print("❌ All fields are required!")
         return
     
@@ -373,7 +298,6 @@ def register_from_folder():
         print(f"❌ Folder not found: {folder}")
         return
     
-    # Find images
     images = []
     for ext in ['*.jpg', '*.jpeg', '*.png', '*.JPG', '*.JPEG', '*.PNG']:
         images.extend(folder_path.glob(ext))
@@ -385,13 +309,13 @@ def register_from_folder():
     print(f"Found {len(images)} images")
     
     success, message = system.register_employee(
-        emp_id, emp_name, [str(img) for img in images]
+        emp_code, emp_name, [str(img) for img in images]
     )
     
-    if success:
-        print(f"\n🎉 {emp_name} registered successfully!")
-
-
+    if not success:
+        print(f"\n❌ Registration failed: {message}")
+ 
+ 
 def bulk_register():
     """Bulk register from structured folders"""
     system = RegistrationSystem()
@@ -421,7 +345,6 @@ def bulk_register():
         if not emp_folder.is_dir():
             continue
         
-        # Parse folder name: EMP001_John_Doe
         name = emp_folder.name
         parts = name.split('_', 1)
         
@@ -430,13 +353,12 @@ def bulk_register():
             failed += 1
             continue
         
-        emp_id = parts[0].upper()
+        emp_code = parts[0].upper()
         emp_name = parts[1].replace('_', ' ')
         
         print(f"\n{'='*60}")
-        print(f"Processing: {emp_name} ({emp_id})")
+        print(f"Processing: {emp_name} ({emp_code})")
         
-        # Find images
         images = []
         for ext in ['*.jpg', '*.jpeg', '*.png', '*.JPG', '*.JPEG', '*.PNG']:
             images.extend(emp_folder.glob(ext))
@@ -447,7 +369,7 @@ def bulk_register():
             continue
         
         success, _ = system.register_employee(
-            emp_id, emp_name, [str(img) for img in images]
+            emp_code, emp_name, [str(img) for img in images]
         )
         
         if success:
@@ -460,35 +382,8 @@ def bulk_register():
     print("="*60)
     print(f"✅ Registered: {registered}")
     print(f"❌ Failed: {failed}")
-
-
-def manage_employees():
-    """Manage existing employees"""
-    system = RegistrationSystem()
-    
-    while True:
-        print("\n" + "="*60)
-        print("👥 EMPLOYEE MANAGEMENT")
-        print("="*60)
-        print("\n1. List all employees")
-        print("2. Delete employee")
-        print("3. Back to main menu")
-        
-        choice = input("\nChoice (1-3): ").strip()
-        
-        if choice == '1':
-            system.list_employees()
-            
-        elif choice == '2':
-            emp_id = input("\nEmployee ID to delete: ").strip().upper()
-            system.delete_employee(emp_id)
-            
-        elif choice == '3':
-            break
-        else:
-            print("❌ Invalid choice!")
-
-
+ 
+ 
 def main():
     """Main menu"""
     while True:
@@ -498,10 +393,9 @@ def main():
         print("\n1. Live capture (webcam)")
         print("2. Register from folder")
         print("3. Bulk register")
-        print("4. Manage employees")
-        print("5. Exit")
+        print("4. Exit")
         
-        choice = input("\nChoice (1-5): ").strip()
+        choice = input("\nChoice (1-4): ").strip()
         
         if choice == '1':
             register_live()
@@ -510,13 +404,12 @@ def main():
         elif choice == '3':
             bulk_register()
         elif choice == '4':
-            manage_employees()
-        elif choice == '5':
             print("\n👋 Goodbye!")
             break
         else:
             print("❌ Invalid choice!")
-
-
+ 
+ 
 if __name__ == '__main__':
     main()
+ 

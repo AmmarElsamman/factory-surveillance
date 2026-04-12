@@ -28,7 +28,7 @@ from ui.helmet_vest import HelmetVestWidget
 
 # Load AI face detection module
 try:
-    from face_detection.main import AttendanceSystem
+    from cv.detection.attendance_system import AttendanceSystem
 except ImportError as e:
     print(f"CRITICAL: Failed to import face_detection.main. Error: {e}")
 
