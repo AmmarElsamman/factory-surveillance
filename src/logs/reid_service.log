@@ -1,0 +1,14 @@
+2026-04-12 14:35:06 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:35:45 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:35:55 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:37:02 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:37:34 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:37:44 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:40:22 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:41:04 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:41:15 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:42:13 - Data.unit_of_work - WARNING - unit_of_work.py:53 - UnitOfWork rolled back due to: the JSON object must be str, bytes or bytearray, not dict
+2026-04-12 14:45:52 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:46:01 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-12 14:46:42 - Data.unit_of_work - WARNING - unit_of_work.py:53 - UnitOfWork rolled back due to: 'str' object has no attribute 'value'
+2026-04-12 14:47:35 - Data.connection - INFO - connection.py:44 - Database connection pool initialized

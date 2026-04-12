@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
-from ..enums import CameraStatus
+from enums import CameraStatus
 
 @dataclass
 class Camera:
@@ -18,7 +18,7 @@ class Camera:
     zone_type: str
     ip_address: str
     coordinates: Optional[dict] = None
-    status: CameraStatus = CameraStatus.ACTIVE
+    status: CameraStatus = CameraStatus.ONLINE
     field_of_view: Optional[dict] = None
     installation_date: datetime = field(default_factory=datetime.now)
     created_at: datetime = field(default_factory=datetime.now)

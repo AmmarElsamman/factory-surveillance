@@ -23,4 +23,12 @@ class WorkerEmbedding:
     
     def set_as_primary_embedding(self):
         self.is_primary = True
-    
+
+@dataclass
+class EmbeddingSearchResult:
+    """Model for embedding search result"""
+    embedding_id: int
+    worker_id: str
+    full_name: str
+    similarity: float
+    is_primary: bool

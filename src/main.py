@@ -8,8 +8,10 @@ import json
 import psycopg2
 import numpy as np
 
+from Data.unit_of_work import UnitOfWork
+from Entites.WorkerEmbedding import WorkerEmbedding
 from models import (
-    DetectionEvent, WorkerLocation, AlertResponse, 
+    DetectionEvent, StoreEmbeddingRequest, WorkerLocation, AlertResponse, 
     EmbeddingQuery, CreateGlobalTrack, UpdateGlobalTrack
 )
 
@@ -52,69 +54,37 @@ async def health_check():
 # Re-Identification Endpoints
 # ============================================
 
-# @app.post("/api/reid/search-embedding")
-# async def search_similar_embeddings(query: EmbeddingQuery):
-#     """
-#     Search for similar embeddings to identify a person.
+@app.post("/api/reid/search-embedding")
+async def search_similar_embeddings(query: EmbeddingQuery):
+    """
+    Search for similar embeddings to identify a person.
     
-#     This is the MAIN Re-ID function.
+    This is the MAIN Re-ID function.
     
-#     Usage:
-#     1. CV team detects person and extracts 512D embedding
-#     2. Send embedding to this endpoint
-#     3. Get back list of potential matches with similarity scores
-#     4. If top match > threshold, it's the same person
-#     """
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-    
-#     model = SentenceTransformer('distiluse-base-multilingual-cased')
-#     def to_pgvector(vec: np.ndarray) -> str:
-#         return "[" + ",".join(map(str, vec.tolist())) + "]"
-    
-#     text = "John Doe works as Software Developer in Engineering department"
-#     embedding = model.encode(text)
-    
-#     query2 = EmbeddingQuery(
-#     feature_vector=embedding.tolist(),  # 512-dim vector with all 0.5
-#     threshold=0.90,
-#     max_results=2,
-#     search_active_only=False
-# )
-    
-#     try:
-#         # Convert list to PostgreSQL vector format
-#         vector_str = json.dumps([float(x) for x in query2.feature_vector])
+    Usage:
+    1. CV team detects person and extracts 512D embedding
+    2. Send embedding to this endpoint
+    3. Get back list of potential matches with similarity scores
+    4. If top match > threshold, it's the same person
+    """
+    with UnitOfWork() as uow:
+        results = uow.worker_embeddings.search_by_similarity(
+            feature_vector= query.feature_vector,
+            top_k= query.max_results
+        )
         
-        
-#         # Search all registered workers (slower, fallback)
-#         sql = """
-#             SELECT 
-#                 we.embedding_id,
-#                 we.worker_id,
-#                 w.full_name as worker_name,
-#                 NULL as global_track_id,
-#                 NULL as current_camera_id,
-#                 NULL as last_seen,
-#                 1 - (we.feature_vector <=> %s::vector) as similarity
-#             FROM worker_embeddings we
-#             JOIN workers w ON we.worker_id = w.worker_id
-#             WHERE we.is_primary = true
-#                 AND w.status = 'active'
-#             ORDER BY similarity DESC
-#             LIMIT %s
-#         """
-#         cursor.execute(sql, (vector_str, query2.max_results))
-#         matches = cursor.fetchall()
-#         cursor.close()
-#         conn.close()
-#         return {"matches": matches, "count": len(matches)}
-        
-    
-#     except Exception as e:
-#         cursor.close()
-#         conn.close()
-#         raise HTTPException(status_code=500, detail=f"Embedding search failed: {str(e)}")
+        if results and results[0].similarity < query.threshold:
+            return {
+                "match_found": True,
+                "matches": results,
+                "message": f"Match found with distance {results[0].similarity} (threshold: {query.threshold})"
+            }
+        else:
+            return {
+                "match_found": False,
+                "matches": results,
+                "message": f"No match found. Closest distance: {results[0].similarity if results else 'N/A'} (threshold: {query.threshold})"
+            }
 
 # @app.get("/api/reid/active-tracks")
 # async def get_active_track_embeddings():
@@ -484,197 +454,42 @@ async def create_detection_events(event: DetectionEvent):
 @app.get("/api/cameras")
 async def get_cameras():
     """Get all cameras"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            SELECT camera_id, location_name, zone_type, status
-            FROM cameras
-            ORDER BY camera_id
-        """)    
-        cameras = cursor.fetchall()
-    finally:
-        cursor.close()
-        conn.close()
-        
-    return {"cameras": cameras}
+    with UnitOfWork() as uow:
+        cameras = uow.cameras.list_all()
+        return {"cameras": cameras}
 
 @app.get("/api/workers")
 async def get_workers(status: Optional[str] = Query(None)):
     """Get all workers, optionally filtered by status"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:    
+    with UnitOfWork() as uow:
         if status:
-            cursor.execute("""
-                SELECT worker_id, employee_code, full_name, department, role, status
-                FROM workers
-                WHERE status = %s
-                ORDER BY full_name
-            """, (status,))
+            workers = uow.workers.find_by_status(status=status)
         else:
-            cursor.execute("""
-                SELECT worker_id, employee_code, full_name, department, role, status
-                FROM workers
-                ORDER BY full_name
-            """)
-        workers = cursor.fetchall()
-    finally:
-        cursor.close()
-        conn.close()
-        
-    return {"workers": workers}
+            workers = uow.workers.list_all()
+        return {"workers": workers}
 
 @app.get("/api/worker_embeddings")
 async def get_worker_embeddings():
     """Get all workers embeddings"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:    
-        cursor.execute("""
-            SELECT 
-                we.embedding_id,
-                we.worker_id,
-                w.full_name,
-                we.feature_vector,
-                we.quality_score,
-                we.camera_id,
-                we.is_primary,
-                we.created_at
-            FROM worker_embeddings we
-            JOIN workers w ON we.worker_id = w.worker_id
-            ORDER BY w.full_name
-        """)
-        embeddings = cursor.fetchall()
-    finally:
-        cursor.close()
-        conn.close()
-        
-    return {"embeddings": embeddings}
+    with UnitOfWork() as uow:
+        embeddings = uow.worker_embeddings.list_all()
+        return {"embeddings": embeddings}
 
-@app.post("/api/worker_embeddings/{employee_code}")
-async def insert_worker_embedding(employee_code: str):
-    """Insert a single embedding for a worker (for testing)"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Locate file relative to project root
-    file_path = Path(__file__).resolve().parent.parent / "grad-project" / "employee_data" / f"{employee_code}.json"
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail=f"Employee file not found: {file_path}")
-    
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            
-        embedding = data.get("embedding")
-        if not embedding or not isinstance(embedding, list):
-            raise HTTPException(status_code=400, detail="Invalid embedding data in file")
-        
-        if len(embedding) != 512:
-            raise HTTPException(status_code=400, detail="Embedding must be 512 dimensions")
-        
-        def to_pgvector(vec: np.ndarray) -> str:
-            return "[" + ",".join(map(str, vec.tolist())) + "]"
-        
-        cursor.execute("""
-                       SELECT worker_id, full_name, department, role
-                       FROM workers 
-                       WHERE employee_code=%s
-                       """, (employee_code,))
-        worker = cursor.fetchone()
-        if not worker:
-            raise HTTPException(status_code=404, detail="Worker not found")
-        
-        
-            
-        INSERT_SQL = """
-                    INSERT INTO worker_embeddings (
-                        worker_id,
-                        feature_vector,
-                        quality_score,
-                        capture_timestamp,
-                        camera_id,
-                        is_primary
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    """
-        cursor.execute(
-                    INSERT_SQL, 
-                    (
-                        worker["worker_id"],
-                        embedding,
-                        round(np.random.uniform(0.8, 1.0), 3),
-                        datetime.utcnow(),
-                        f"CAM_0{np.random.randint(1,4)}",
-                        True 
-                    )
-                )
-        conn.commit()
-        return {"status": "embedding inserted", "employee_code": employee_code}
-    except HTTPException:
-        raise
-    except Exception as e:
-        conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cursor.close()
-        conn.close()
-
-@app.get("/api/worker_embeddings/upload")
-async def upload_embedding():
-    
-    
-    model = SentenceTransformer('distiluse-base-multilingual-cased')
-    def to_pgvector(vec: np.ndarray) -> str:
-        return "[" + ",".join(map(str, vec.tolist())) + "]"
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-                       SELECT worker_id, full_name, department, role
-                       FROM workers 
-                       WHERE status='active'
-                       """)
-        
-        workers = cursor.fetchall()
-        print(f"Found {len(workers)} active workers")
-        
-        INSERT_SQL = """
-                        INSERT INTO worker_embeddings (
-                            worker_id,
-                            feature_vector,
-                            quality_score,
-                            capture_timestamp,
-                            camera_id,
-                            is_primary
-                        )
-                        VALUES (%s, %s, %s, %s, %s, %s)
-                        """
-        for worker in workers:
-            base_text = f"{worker['full_name']} work as {worker['role']} in {worker['department']} department"
-            for i in range(10):
-                variation_text = f"{base_text}. capture variation {i}"
-                embedding = model.encode(variation_text)
-                
-                cursor.execute(
-                    INSERT_SQL, 
-                    (
-                        worker["worker_id"],
-                        to_pgvector(embedding),
-                        round(np.random.uniform(0.8, 1.0), 3),
-                        datetime.utcnow(),
-                        f"CAM_0{np.random.randint(1,4)}",
-                        True if i == 0 else False
-                    )
-                )
-    finally:
-        conn.commit()
-        cursor.close()
-        conn.close()    
-    
-    return {"status": "embeddings uploaded"}
+@app.post("/api/worker_embeddings")
+async def insert_worker_embedding(storeEmbeddingRequest: StoreEmbeddingRequest):
+    """Insert new embedding for worker"""
+    with UnitOfWork() as uow:
+        workerEmbedding = WorkerEmbedding(
+            worker_id = storeEmbeddingRequest.worker_id,
+            camera_id= storeEmbeddingRequest.camera_id,
+            feature_vector= storeEmbeddingRequest.feature_vector,
+            quality_score= storeEmbeddingRequest.quality_score,
+            is_primary= storeEmbeddingRequest.is_primary
+        )
+        embedding_id = uow.worker_embeddings.add(workerEmbedding=workerEmbedding)
+        if storeEmbeddingRequest.is_primary:
+            uow.worker_embeddings.set_primary_embedding(embedding_id=embedding_id)
+        return {"embedding_id": embedding_id, "status": "created"}
 
 @app.get("/api/workers/{worker_id}/location", response_model=WorkerLocation)
 async def get_worker_location(worker_id: str):

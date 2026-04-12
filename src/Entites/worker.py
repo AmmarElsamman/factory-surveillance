@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import uuid4
 
-from ..enums import WorkerStatus
+from enums import WorkerStatus
 
 @dataclass
 class Worker:

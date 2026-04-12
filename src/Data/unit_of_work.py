@@ -5,8 +5,10 @@ Groups repository operations into atomic transactions
 from typing import Optional
 from .connection import db_connection
 
-from .Repositories.worker_repository import WorkerRepository
-from ..Utils.logger import get_logger
+from .Repositories.Worker_repository import WorkerRepository
+from .Repositories.Camera_repository import CameraRepository
+from .Repositories.WorkerEmbedding_Repository import WorkerEmbeddingRepository
+from Utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -20,6 +22,8 @@ class UnitOfWork:
         self._connection = None
         self._cursor = None
         self.workers: Optional[WorkerRepository] = None
+        self.cameras: Optional[CameraRepository] = None
+        self.worker_embeddings: Optional[WorkerEmbeddingRepository] = None
         
     def __enter__(self):
         """Enter context manager"""
@@ -29,6 +33,8 @@ class UnitOfWork:
         
         # * Initialize repositories with the same cursor (same connection / same transaction)
         self.workers = WorkerRepository(self._cursor)
+        self.cameras = CameraRepository(self._cursor)
+        self.worker_embeddings = WorkerEmbeddingRepository(self._cursor)
         
         logger.debug("UnitOfWork started")
         return self
@@ -44,7 +50,7 @@ class UnitOfWork:
             else:
                 #Exception occurred, rollback
                 self._connection.rollback()
-                logger.warning("UnitOfWork rolled back due to: {exc_val}")
+                logger.warning(f"UnitOfWork rolled back due to: {exc_val}")
         finally:
             if self._cursor:
                 self._cursor.close()

@@ -74,3 +74,12 @@ class AlertResponse(BaseModel):
     severity: str
     status: str
     description: str
+
+class StoreEmbeddingRequest(BaseModel):
+    """worker embedding storage request model"""
+    worker_id: str
+    camera_id: str
+    feature_vector: List[float]
+    quality_score: Optional[float] = None
+    is_primary: bool = False
+

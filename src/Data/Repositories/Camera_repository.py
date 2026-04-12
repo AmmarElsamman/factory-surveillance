@@ -4,11 +4,13 @@ from typing import List, Optional
 
 from enums import CameraStatus
 
-from ...Utils.logger import logger
+from Utils.logger import get_logger
 
 from Entites.Camera import Camera
 from .base import BaseRepository, IRepository
 import json
+
+logger = get_logger(__name__)
 
 class CameraRepository(BaseRepository[Camera], IRepository[Camera]):
     """
@@ -143,10 +145,10 @@ class CameraRepository(BaseRepository[Camera], IRepository[Camera]):
             camera_id=row['camera_id'],
             location_name=row['location_name'],
             zone_type=row['zone_type'],
-            coordinates=json.loads(row['coordinates']) if row['coordinates'] else None,
+            coordinates=row['coordinates'],
             ip_address=row['ip_address'],
             status=CameraStatus(row['status']),
-            field_of_view=json.loads(row['field_of_view']) if row['field_of_view'] else None,
+            field_of_view=row['field_of_view'],
             installation_date=row['installation_date'],
             created_at=row['created_at'],
             updated_at=row['updated_at']

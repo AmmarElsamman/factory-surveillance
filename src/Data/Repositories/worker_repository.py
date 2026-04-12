@@ -2,11 +2,12 @@ from datetime import datetime
 from typing import List, Optional
 from .base import BaseRepository
 from .base import IRepository
-from ...Entites.Worker import Worker
-from ...Utils.logger import logger
-from ...enums import WorkerStatus
+from Entites.Worker import Worker
+from Utils.logger import get_logger
+from enums import WorkerStatus
 import json
 
+logger = get_logger(__name__)
 class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
     """
     Repository for Worker Entity
@@ -158,6 +159,20 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
         
         return [self._map_to_entity(row) for row in rows]
     
+    def find_by_status(self, status: WorkerStatus) -> List[Worker]:
+        """Find workers by status"""
+        
+        query = """
+            SELECT * FROM workers
+            WHERE status = %s
+            ORDER BY full_name
+        """
+        
+        self._execute(query, (status,))
+        rows = self._fetch_all()
+        
+        return [self._map_to_entity(row) for row in rows]
+    
     def _map_to_entity(self, row: dict) -> Worker:
         """Map database row to Worker entity"""
         
@@ -170,7 +185,7 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
             is_authorized=row['is_authorized'],
             status=WorkerStatus(row['status']),
             registration_date=row['registration_date'],
-            contact_info=json.loads(row['contact_info']) if row['contact_info'] else None,
+            contact_info=row['contact_info'],
             created_at=row['created_at'],
             updated_at=row['updated_at']
         )
