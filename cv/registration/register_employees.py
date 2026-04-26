@@ -122,6 +122,7 @@ class RegistrationSystem:
                         "worker_id": worker_id,
                         "camera_id": "CAM-001",
                         "feature_vector": avg_embedding.tolist(),
+                        "name": emp_name,
                         "quality_score": avg_sim,
                         "is_primary": True
                     }

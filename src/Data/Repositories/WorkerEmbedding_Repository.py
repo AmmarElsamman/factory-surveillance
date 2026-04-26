@@ -131,8 +131,9 @@ class WorkerEmbeddingRepository(BaseRepository[WorkerEmbedding], IRepository[Wor
         List all worker embeddings
         """
         query = """
-            SELECT * FROM worker_embeddings
-            LIMIT %s OFFSET %s
+            SELECT we.*, w.full_name 
+            FROM worker_embeddings we
+            JOIN workers w ON we.worker_id = w.worker_id
         """
         
         self._execute(query, (limit, offset))
@@ -153,6 +154,7 @@ class WorkerEmbeddingRepository(BaseRepository[WorkerEmbedding], IRepository[Wor
             embedding_id=row['embedding_id'],
             worker_id=row['worker_id'],
             camera_id=row['camera_id'],
+            name = row['full_name'] if 'full_name' in row else None,
             feature_vector=json.loads(row['feature_vector']) if row['feature_vector'] else None,
             quality_score=row['quality_score'],
             is_primary=row['is_primary'],

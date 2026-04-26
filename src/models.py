@@ -79,6 +79,7 @@ class StoreEmbeddingRequest(BaseModel):
     """worker embedding storage request model"""
     worker_id: str
     camera_id: str
+    name: str
     feature_vector: List[float]
     quality_score: Optional[float] = None
     is_primary: bool = False

@@ -492,6 +492,7 @@ async def insert_worker_embedding(storeEmbeddingRequest: StoreEmbeddingRequest):
         workerEmbedding = WorkerEmbedding(
             worker_id = storeEmbeddingRequest.worker_id,
             camera_id= storeEmbeddingRequest.camera_id,
+            name = storeEmbeddingRequest.name,
             feature_vector= storeEmbeddingRequest.feature_vector,
             quality_score= storeEmbeddingRequest.quality_score,
             is_primary= storeEmbeddingRequest.is_primary

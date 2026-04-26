@@ -14,6 +14,7 @@ class WorkerEmbedding:
     """
     worker_id: str
     camera_id: str
+    name: str
     feature_vector: List[float]
     embedding_id: Optional[int] = None
     quality_score: Optional[float] = None
