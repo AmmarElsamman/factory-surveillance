@@ -2,20 +2,23 @@
 Dashboard page - Command Center
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                                QGridLayout, QLabel, QPushButton, QScrollArea)
-from PySide6.QtCore import Qt
+                                QLabel, QPushButton, QScrollArea)
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont
 
-from utils.styles import COLORS
-from components.cards import StatCard, Card
-from api_client import APIClient
+from ui.utils.styles import COLORS
+from ui.components.cards import StatCard, Card
+from ui.api_client import APIClient
 
 
 class DashboardWidget(QWidget):
+    # Signal emitted when a quick action button is clicked
+    # The integer is the page index to navigate to
+    navigate_to = Signal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # ── Scroll wrapper ──
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
 
@@ -34,37 +37,41 @@ class DashboardWidget(QWidget):
         stats_row = QHBoxLayout()
         stats_row.setSpacing(12)
 
-        self.card_workers = StatCard("Active Workers", "-", status="success")
-        self.card_cameras = StatCard("Cameras Online", "-", status="warning")
-        self.card_alerts = StatCard("Active Alerts", "-", status="danger")
-        
+        self.card_workers = StatCard("Active Workers", "—", status="success")
+        self.card_cameras = StatCard("Cameras Online", "—", status="warning")
+        self.card_alerts  = StatCard("Active Alerts",  "—", status="danger")
+
         stats_row.addWidget(self.card_workers)
         stats_row.addWidget(self.card_cameras)
         stats_row.addWidget(self.card_alerts)
-
         layout.addLayout(stats_row)
 
-        # ── Quick actions ──
+        # ── Quick Actions ──
         actions_card = Card("Quick Actions")
 
         actions_row = QHBoxLayout()
         actions_row.setSpacing(12)
 
-        btn_live  = QPushButton("🤖  AI Detection")
-        btn_live.setMinimumHeight(40)
-        btn_live.setCursor(Qt.PointingHandCursor)
-
+        # Page indices must match NavigationBar.MENU_ITEMS
+        btn_ai      = QPushButton("🤖  AI Detection")
         btn_workers = QPushButton("👥  Workers")
-        btn_workers.setMinimumHeight(40)
-        btn_workers.setCursor(Qt.PointingHandCursor)
-
         btn_cameras = QPushButton("🎥  Cameras")
-        btn_cameras.setMinimumHeight(40)
-        btn_cameras.setCursor(Qt.PointingHandCursor)
+        btn_alerts  = QPushButton("🚨  Alerts")
 
-        actions_row.addWidget(btn_live)
+        for btn in [btn_ai, btn_workers, btn_cameras, btn_alerts]:
+            btn.setMinimumHeight(40)
+            btn.setCursor(Qt.PointingHandCursor)
+
+        # Connect each button to emit navigate_to with the correct page index
+        btn_ai.clicked.connect(lambda: self.navigate_to.emit(1))
+        btn_workers.clicked.connect(lambda: self.navigate_to.emit(2))
+        btn_cameras.clicked.connect(lambda: self.navigate_to.emit(3))
+        btn_alerts.clicked.connect(lambda: self.navigate_to.emit(4))
+
+        actions_row.addWidget(btn_ai)
         actions_row.addWidget(btn_workers)
         actions_row.addWidget(btn_cameras)
+        actions_row.addWidget(btn_alerts)
         actions_row.addStretch()
 
         actions_widget = QWidget()
@@ -79,21 +86,20 @@ class DashboardWidget(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(scroll)
-        
-        self.load_data()
+
+        # Load data after window is shown
+        QTimer.singleShot(0, self.load_data)
 
     def load_data(self):
         """Load stats from API and update StatCards"""
         try:
             workers = APIClient.get_workers(status="active")
             self.card_workers.update_value(len(workers))
-            
+
             cameras = APIClient.get_cameras()
-            online_cameras = [c for c in cameras if c.get("status") == "online"]
-            self.card_cameras.update_value(f"{len(online_cameras)}/{len(cameras)}")
-            
-            self.card_alerts.update_value("0") #TODO
-        
+            online  = [c for c in cameras if c.get("status") == "online"]
+            self.card_cameras.update_value(f"{len(online)}/{len(cameras)}")
+
+            self.card_alerts.update_value("0")  # TODO: wire alerts endpoint
         except Exception as e:
-            print(f"Error loading dashboard data: {e}")
-        pass
+            print(f"Dashboard load error: {e}")

@@ -92,9 +92,16 @@ class AIWidget(QWidget):
         self.btn_stop  = QPushButton("⏹ Stop")
         
         # Use Semantic Colors from styles.py
-        self.btn_start.setStyleSheet(f"QPushButton {{ background-color: {COLORS['success']}; color: white; border: none; }}")
-        self.btn_stop.setStyleSheet(f"QPushButton {{ background-color: {COLORS['danger']}; color: white; border: none; }}")
-        
+        self.btn_start.setStyleSheet(f"""
+                                    QPushButton {{ background-color: {COLORS['success']}; color: white; border: none; }}
+                                    QPushButton:hover {{ background-color: #2ea043; }}
+                                    QPushButton:disabled {{ background-color: {COLORS['surface_alt']}; color: {COLORS['text_disabled']}; border: none; }}
+                                    """)
+        self.btn_stop.setStyleSheet(f"""
+                                    QPushButton {{ background-color: {COLORS['danger']}; color: white; border: none; }}
+                                    QPushButton:hover {{ background-color: #da3633; }}
+                                    QPushButton:disabled {{ background-color: {COLORS['surface_alt']}; color: {COLORS['text_disabled']}; border: none; }}
+                                    """)
         self.btn_pause.setEnabled(False)
         self.btn_stop.setEnabled(False)
         
@@ -125,6 +132,7 @@ class AIWidget(QWidget):
             self.worker.is_paused = False
             
         self.btn_start.setEnabled(False)
+        self.cam_select.setEnabled(False)
         self.btn_pause.setEnabled(True)
         self.btn_stop.setEnabled(True)
         self.status_box.setText("System Status: Running")
@@ -140,6 +148,7 @@ class AIWidget(QWidget):
         self.video_container.clear()
         self.video_container.setText("Stream Stopped")
         self.btn_start.setEnabled(True)
+        self.cam_select.setEnabled(True)
         self.btn_pause.setEnabled(False)
         self.btn_stop.setEnabled(False)
         self.status_box.setText("System Status: Stopped")

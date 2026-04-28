@@ -25,7 +25,7 @@ class WorkersWidget(QWidget):
         self.refresh_timer.start(60000)
         
         # Initial load
-        self.load_data()
+        QTimer.singleShot(0, self.load_data)
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -55,7 +55,7 @@ class WorkersWidget(QWidget):
         self.search_box.textChanged.connect(self.apply_filters)
         
         self.status_dropdown = QComboBox()
-        self.status_dropdown.addItems(["All Status", "Active", "Suspended", "Inactive"])
+        self.status_dropdown.addItems(["All Status", "Active", "Inactive"])
         self.status_dropdown.currentTextChanged.connect(self.apply_filters)
         
         refresh_btn = QPushButton("Refresh")

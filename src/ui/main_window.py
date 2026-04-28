@@ -12,22 +12,16 @@ from pages.workers import WorkersWidget
 from pages.devices import DevicesWidget
 from pages.ai_detection import AIWidget
 from utils.styles import apply_main_stylesheet
-import sys
 import os
 
-# Adds the 'src' directory to the python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from cv.detection.attendance_system import AttendanceSystem # Now this will work
-
-# AI Engine Import
-# try:
-#     from ..cv.detection.attendance_system import AttendanceSystem
-# except ImportError:
-#     # Fallback/Mock for environment testing
-#     print("WARNING: Faild import of AttendanceSystem")
-#     class AttendanceSystem:
-#         def process_frame(self, frame): return frame, []
+try:
+    from cv.detection.detection_system import DetectionSystem
+except ImportError:
+    # Fallback/Mock for environment testing
+    print("WARNING: Faild import of AttendanceSystem")
+    class DetectionSystem:
+        def process_frame(self, frame): return frame, []
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -36,7 +30,7 @@ class MainWindow(QMainWindow):
         self.resize(1400, 900)
 
         # 1. Initialize AI System (used by the AI Detection page)
-        self.ai_system = AttendanceSystem()
+        self.ai_system = DetectionSystem()
 
         # 2. Apply Global Stylesheet (from styles.py)
         apply_main_stylesheet(self)
@@ -75,6 +69,10 @@ class MainWindow(QMainWindow):
         
         # Set default page
         self.pages.setCurrentIndex(0)
+        
+        # Wire dashboard quick actions
+        self.dashboard.navigate_to.connect(self.on_navigation_changed)
+        self.dashboard.navigate_to.connect(self.nav_bar._set_active)
 
     def on_navigation_changed(self, index):
         """Switches the view when sidebar items are clicked"""

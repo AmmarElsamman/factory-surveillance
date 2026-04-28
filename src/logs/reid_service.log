@@ -40,3 +40,7 @@ DETAIL:  Key (camera_id)=(REGISTRATION) is not present in table "cameras".
 2026-04-28 18:10:28 - Data.Repositories.Worker_repository - INFO - Worker_repository.py:132 - Worker EMP-001 status changed to active
 2026-04-28 18:10:45 - Data.Repositories.Worker_repository - INFO - Worker_repository.py:132 - Worker EMP-001 status changed to inactive
 2026-04-28 18:11:02 - Data.Repositories.Worker_repository - INFO - Worker_repository.py:132 - Worker EMP-001 status changed to active
+2026-04-28 20:05:22 - Data.connection - ERROR - connection.py:46 - Failed to initialize connection pool: connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+
+2026-04-28 20:05:43 - Data.connection - INFO - connection.py:44 - Database connection pool initialized

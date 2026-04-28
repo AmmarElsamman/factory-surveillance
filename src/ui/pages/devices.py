@@ -69,7 +69,7 @@ class DevicesWidget(QWidget):
         self.timer.timeout.connect(self.load_cameras)
         self.timer.start(30000)
         
-        self.load_cameras()
+        QTimer.singleShot(0, self.load_cameras)
 
     def load_cameras(self):
         """Fetch cameras from API and populate table"""
@@ -87,7 +87,6 @@ class DevicesWidget(QWidget):
         online = len([c for c in cameras if c.get('status') == 'online'])
         self.stats_label.setText(f"Online: {online} / Total: {total}")
 
-    from PySide6.QtGui import QColor, QBrush # Add QColor to your imports
 
     def populate_table(self, cameras):
         # 1. Clear and reset row count
@@ -97,8 +96,8 @@ class DevicesWidget(QWidget):
         for i, cam in enumerate(cameras):
             # ID, Name, Location
             self.table.setItem(i, 0, QTableWidgetItem(str(cam.get('camera_id', 'N/A'))))
-            self.table.setItem(i, 1, QTableWidgetItem(cam.get('name', 'Unknown')))
-            self.table.setItem(i, 2, QTableWidgetItem(cam.get('location', 'General')))
+            self.table.setItem(i, 1, QTableWidgetItem(cam.get('ip_address', 'Unknown')))
+            self.table.setItem(i, 2, QTableWidgetItem(cam.get('location_name', 'General')))
             
             # 2. Fix: Wrap hex string in QColor
             status_raw = cam.get('status', 'offline').lower()
