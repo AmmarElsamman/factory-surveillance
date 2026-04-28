@@ -34,3 +34,9 @@ DETAIL:  Key (camera_id)=(REGISTRATION) is not present in table "cameras".
 2026-04-16 16:11:26 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
 2026-04-16 16:12:26 - Data.Repositories.WorkerEmbedding_Repository - INFO - WorkerEmbedding_Repository.py:39 - Worker embedding for worker 7ac506ca-2555-431e-a282-bf5a51814add added to database
 2026-04-16 16:12:26 - Data.Repositories.WorkerEmbedding_Repository - INFO - WorkerEmbedding_Repository.py:126 - Embedding 6 set as primary for worker 7ac506ca-2555-431e-a282-bf5a51814add
+2026-04-26 18:50:38 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-28 17:08:12 - Data.connection - INFO - connection.py:44 - Database connection pool initialized
+2026-04-28 18:10:28 - Data.Repositories.Worker_repository - INFO - Worker_repository.py:132 - Worker EMP-001 status changed to inactive
+2026-04-28 18:10:28 - Data.Repositories.Worker_repository - INFO - Worker_repository.py:132 - Worker EMP-001 status changed to active
+2026-04-28 18:10:45 - Data.Repositories.Worker_repository - INFO - Worker_repository.py:132 - Worker EMP-001 status changed to inactive
+2026-04-28 18:11:02 - Data.Repositories.Worker_repository - INFO - Worker_repository.py:132 - Worker EMP-001 status changed to active

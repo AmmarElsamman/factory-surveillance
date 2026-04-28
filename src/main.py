@@ -468,7 +468,17 @@ async def get_workers(status: Optional[str] = Query(None)):
             workers = uow.workers.list_all()
         return {"workers": workers}
 
-@app.get("/api/worker/{employee_code}")
+@app.put("/api/workers/{employee_code}/toggle-status")
+async def toggle_worker_status(employee_code: str):
+    """Change worker status (activate/deactivate)"""
+    with UnitOfWork() as uow:
+        new_status = uow.workers.toggle_status(employee_code=employee_code)
+        if not new_status:
+            raise HTTPException(status_code=404, detail="Worker not found")
+        return {"employee_code": employee_code, "new_status": new_status.value}
+
+
+@app.get("/api/workers/{employee_code}")
 async def get_worker_by_employee_id(employee_code: str):
     """Get worker details by employee ID"""
     with UnitOfWork() as uow:

@@ -100,11 +100,38 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
             worker.status.value,
             json.dumps(worker.contact_info) if worker.contact_info else None,
             datetime.now(),
+            worker.worker_id
         ))
         
-        logger.info(f"Worker {worker.worker_id} updated")
+        logger.info(f"Worker {worker.employee_code} updated")
         return True
     
+    def toggle_status(self, employee_code: str) -> WorkerStatus:
+        """Change worker status (active/inactive)"""
+        
+        worker = self.get_by_employee_code(employee_code=employee_code)
+        if not worker:
+            logger.warning(f"Worker with employee code {employee_code} not found")
+            return None
+        
+        new_status = WorkerStatus.INACTIVE if worker.status == WorkerStatus.ACTIVE else WorkerStatus.ACTIVE
+        
+        query = """
+            UPDATE workers
+            SET status = %s,
+                updated_at = %s
+            WHERE employee_code = %s
+        """
+        
+        self._execute(query,(
+            new_status.value,
+            datetime.now(),
+            employee_code
+        ))
+        
+        logger.info(f"Worker {employee_code} status changed to {new_status.value}")
+        return new_status
+        
     def delete(self, worker_id: str) -> bool:
         """Delete worker (delete by deactivating)"""
         
@@ -117,6 +144,8 @@ class WorkerRepository(BaseRepository[Worker], IRepository[Worker]):
         
         self._execute(query, (worker_id,))
         return True
+    
+        
     
     def list_all(self, limit: int = 20, offset: int = 0) -> List[Worker]:
         """List all workers with pagination"""

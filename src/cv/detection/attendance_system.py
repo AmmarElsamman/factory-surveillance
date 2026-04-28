@@ -269,7 +269,7 @@ class AttendanceSystem:
         self.frame_count += 1
 
         # Always process frame 1, then apply skip logic
-        if self.frame_count > 1 and self.frame_count % (self.skip_frames + 1) != 0:
+        if self.frame_count > 1 and self.frame_count % (self.skip_frames + 1) != 1:
             return self._draw_results(frame, self._last_results), self._last_results
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
